@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#b93838">
+<title>table-parse · Table-driven parsing</title>
+<style>
+:root{color-scheme:light;--paper:#faf8f4;--ink:#292b32;--muted:#77766f;--line:#e3dfd7;--red:#b93838;--wash:#fcf0ed;--row-height:32px;--heading-height:42px;--mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{display:flex;flex-direction:column;width:100%;height:100vh;height:100dvh;min-height:580px;padding:32px 32px 24px;margin:0}header{flex-shrink:0;display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:28px}h1{font-size:36px;letter-spacing:-1.6px;line-height:1;margin:0;font-weight:750}h1 span{color:var(--red)}.badge{border:1px solid var(--line);border-radius:30px;padding:8px 13px;font:11px var(--mono);letter-spacing:1px;white-space:nowrap}.game{--grammar-width:38%;--action-width:86px;position:relative;display:flex;flex-direction:column;width:100%;flex:1;min-width:0;min-height:280px;background:white;border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 8px 30px #292b3205}.panels{position:relative;display:grid;grid-template-columns:minmax(0,var(--grammar-width)) minmax(0,1fr);flex:1;min-height:0}.grammar-panel{display:flex;flex-direction:column;min-width:0;min-height:0;border-right:1px solid var(--line)}.panel-head{height:var(--heading-height);flex-shrink:0;display:flex;align-items:center;background:#f5f3ee;border-bottom:1px solid var(--line);font-size:10px;font-weight:700;letter-spacing:1.6px;color:var(--muted)}.panel-head label,.panel-head span{padding:0 18px}.state-head{position:sticky;top:0;z-index:3;display:grid;grid-template-columns:minmax(0,1fr) var(--action-width)}.state-head span{display:flex;align-items:center;height:100%;white-space:nowrap}.state-head span:last-child{position:sticky;right:0;background:#f5f3ee}.grammar-box{flex:1;min-height:0;position:relative}.grammar-box textarea,.grammar-highlight{font:14px/var(--row-height) var(--mono);tab-size:2;letter-spacing:normal;white-space:pre;margin:0;padding:8px 18px;width:100%;height:100%;border:0;border-radius:0;box-sizing:border-box}.grammar-box textarea{position:relative;z-index:1;display:block;resize:none;overflow:auto;background:transparent;color:transparent;caret-color:var(--ink);outline:none;scrollbar-width:thin}.grammar-box textarea:focus{color:var(--ink);background:white;box-shadow:inset 0 0 0 2px #b9383860}.grammar-highlight{position:absolute;inset:0;overflow:hidden;pointer-events:none;color:#99958e}.grammar-box textarea:focus + .grammar-highlight{visibility:hidden}.grammar-rule.available{color:var(--red);font-weight:700}.scroll{flex:1;min-height:0;overflow:auto;scrollbar-width:thin;padding:0}.trace{width:max-content;min-width:100%;min-height:100%}.state-rows{padding:8px 0}.state-row{display:grid;grid-template-columns:minmax(0,1fr) var(--action-width);min-height:var(--row-height);font:15px/var(--row-height) var(--mono)}.state-content{display:flex;align-items:center;padding:0 18px 0 10px;white-space:pre}.pointer{width:24px;flex-shrink:0;color:var(--red);font-size:12px}.stack{min-width:120px;text-align:right;padding-right:12px}.dot{color:var(--red);padding-right:12px}.remaining{padding-right:20px}.action{position:sticky;right:0;z-index:1;background:white;padding:0 18px;text-align:center;white-space:pre}.current{background:var(--wash)}.current .action{background:var(--wash)}.future{opacity:.32}.error-text{color:var(--red);font-weight:700}input,textarea,button{font:inherit}#parser-input{font:15px/26px var(--mono);margin:0;padding:0 4px;border:1px solid transparent;border-radius:5px;background:transparent;color:var(--ink);height:28px;outline:none;min-width:12ch}#parser-input:focus{border-color:var(--red);background:white;box-shadow:0 0 0 2px #b9383810}#url:focus{border-color:var(--red);box-shadow:0 0 0 3px #b9383810}input::placeholder{color:#aaa69e}.save-area{flex-shrink:0;display:flex;align-items:center;gap:18px;margin-top:22px}button{cursor:pointer;border:1px solid var(--line);border-radius:9px;background:white;color:var(--ink);font-size:11px;font-weight:700;letter-spacing:1px;padding:13px 16px;min-height:44px}button:hover{background:#efede7}button:focus-visible{outline:2px solid var(--red);outline-offset:2px}#url{min-width:0;flex:1;padding:11px 13px;font:13px/1.6 var(--mono);border:1px solid var(--line);border-radius:9px;outline:none;background:white;color:var(--ink)}footer{flex-shrink:0;border-top:1px solid var(--line);margin-top:24px;padding-top:18px;display:flex;justify-content:space-between;gap:16px;font-size:11px;color:var(--muted)}
+@media(max-width:650px){main{padding:28px 14px}h1{font-size:30px}.badge{display:none}.game{--grammar-width:43%;--action-width:60px}.panel-head label,.panel-head span{padding-left:10px;padding-right:10px}.grammar-box textarea,.grammar-highlight{font-size:12px;padding-left:10px;padding-right:10px}.state-row,#parser-input{font-size:13px}.stack{min-width:32px}.action{padding:0 8px}.save-area{gap:10px}footer{flex-direction:column;gap:4px}}
+
+.history-panel{display:flex;position:relative;min-width:0;min-height:0;--scrollbar-width:0px}.history-panel::after{content:"";position:absolute;top:0;bottom:0;right:calc(var(--action-width) + var(--scrollbar-width) - 1px);width:1px;background:var(--line);pointer-events:none;z-index:4}.panel-divider{position:absolute;z-index:5;top:0;bottom:0;left:calc(var(--grammar-width) - 5px);width:9px;cursor:col-resize;touch-action:none;outline:none}.panel-divider:hover::after,.panel-divider:focus-visible::after,.panels.resizing .panel-divider::after{content:"";position:absolute;top:0;bottom:0;left:3px;width:3px;background:var(--red)}.panels.resizing,.panels.resizing *,.history-panel.resizing,.history-panel.resizing *{cursor:col-resize!important;user-select:none}
+
+.action-divider{position:absolute;z-index:5;top:0;bottom:0;right:calc(var(--action-width) + var(--scrollbar-width) - 5px);width:9px;cursor:col-resize;touch-action:none;outline:none}.action-divider:hover::after,.action-divider:focus-visible::after,.history-panel.resizing .action-divider::after{content:"";position:absolute;top:0;bottom:0;left:3px;width:3px;background:var(--red)}
+
+.game{--history-share:60%}.panels{flex:0 0 var(--history-share)}.table-area{position:relative;display:flex;flex-direction:column;flex:1;min-height:0;border-top:1px solid var(--line)}.table-divider{position:absolute;left:0;right:0;top:-5px;height:9px;z-index:6;cursor:row-resize;touch-action:none;outline:0}.table-divider:hover::after,.table-divider:focus-visible::after,.game.table-resizing .table-divider::after{content:"";position:absolute;left:0;right:0;top:3px;height:3px;background:var(--red)}.game.table-resizing,.game.table-resizing *{cursor:row-resize!important;user-select:none}.table-scroll{flex:1;min-height:0;overflow:auto;scrollbar-width:thin;outline:0}.table-scroll:focus-visible{box-shadow:inset 0 0 0 2px #b9383860}table{border-collapse:separate;border-spacing:0;width:100%;font:13px/1.5 var(--mono);text-align:center}th,td{padding:5px 9px;border-right:1px solid #efede7;border-bottom:1px solid #efede7;white-space:nowrap}th{background:#f5f3ee;color:var(--muted);font-size:11px;font-weight:600;position:sticky;top:0;z-index:1}th:last-child,td:last-child{border-right:0}tr:last-child td{border-bottom:0}td:first-child{font-weight:bold;background:#fdfcf9}.state-conflict{color:var(--red)}.conflict{color:var(--red);background:var(--wash)}.table-action{display:inline-block;border:0;border-radius:3px;min-height:0;padding:0 5px;font:inherit;letter-spacing:normal;background:transparent;cursor:default}.table-action.available{background:var(--wash);cursor:pointer;color:var(--red)}td.available{background:var(--wash)}.table-action.selected{outline:2px solid var(--red);outline-offset:1px}.table-action.available:hover{background:#f6d9d3}.stack sup{color:var(--red);font-size:11px;line-height:0;padding:0 3px}.state-row{cursor:pointer}.state-row:focus-visible{outline:2px solid var(--red);outline-offset:-2px}.state-row.accepted .pointer{color:#29744e}
+</style>
+</head>
+<body>
+<main>
+<header><h1>table<span>-parse</span></h1><div class="badge">Automate shift-reduce parsing.</div></header>
+<section class="game" id="game" aria-label="Shift-reduce parsing game">
+  <div class="panels" id="panels">
+    <section class="grammar-panel" id="grammar-panel" aria-label="Editable grammar">
+      <div class="panel-head"><label for="grammar" id="grammar-heading">LBNF GRAMMAR</label></div>
+      <div class="grammar-box"><textarea id="grammar" wrap="off" spellcheck="false" autocapitalize="off" aria-label="LBNF Grammar" title="Edit the grammar directly. Available reductions are highlighted when you leave this field."></textarea><pre id="grammar-highlight" class="grammar-highlight" aria-hidden="true"></pre></div>
+    </section>
+    <section class="history-panel" id="history-panel" aria-label="Parsing history">
+      <div class="scroll" id="states"><div class="trace" id="trace">
+        <div class="panel-head state-head" id="state-heading"><span>STACK · INPUT</span><span>ACTION</span></div>
+        <div class="state-rows">
+        <div class="state-row" id="initial-state"><div class="state-content"><span class="pointer" id="initial-pointer"></span><span class="stack"><sup>0</sup></span><label class="dot" for="parser-input">·</label><input id="parser-input" aria-label="Parser input (initial state)" title="Edit the parser input here. Existing actions will be replayed." autocomplete="off" autocapitalize="off" spellcheck="false"></div><span class="action" id="initial-action"></span></div>
+        <div id="history"></div>
+        </div>
+      </div></div>
+      <div class="action-divider" id="action-divider" role="separator" tabindex="0" aria-label="Resize stack/input and action columns" aria-orientation="vertical" aria-controls="states" aria-valuemin="0" aria-valuemax="100" aria-valuenow="86" title="Drag to resize columns, or use Left and Right arrow keys."></div>
+    </section>
+    <div class="panel-divider" id="panel-divider" role="separator" tabindex="0" aria-label="Resize grammar and parser columns" aria-orientation="vertical" aria-controls="grammar-panel history-panel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="38" title="Drag to resize columns, or use Left and Right arrow keys."></div>
+  </div>
+  <section class="table-area" id="table-area" aria-label="Parse table">
+    <div id="table-divider" class="table-divider" role="separator" tabindex="0" aria-label="Resize history and parse table" aria-orientation="horizontal" aria-valuemin="20" aria-valuemax="80" aria-valuenow="60" title="Drag to resize, or use Up and Down arrow keys."></div>
+    <div class="panel-head"><span>PARSE TABLE</span></div>
+    <div class="table-scroll" id="table-scroll" tabindex="0" aria-label="Parser actions"><table id="parse-table" aria-label="LR(0) parse table"></table></div>
+  </section>
+</section>
+<section class="save-area" aria-label="Save game"><button id="save" type="button">SAVE ↗</button><input id="url" aria-label="Saved game URL" readonly placeholder="Save a link to this exact position" spellcheck="false"></section>
+<footer><span>Design 2026 by Andreas Abel</span><span>BSD 3-clause license</span></footer>
+</main>
+<script>
+'use strict';
+const DEFAULT_GRAMMAR = `p. S ::= S "+" F;
+m. F ::= F "*" A;
+x. A ::= "x";
+y. A ::= "y";
+z. A ::= "z";
+f. S ::= F;
+a. F ::= A;
+s. A ::= "(" S ")";`;
+const DEFAULT_INPUT = 'x+y*(x+y)+z';
+function parseGrammar(source) {
+  const tokens = [];
+  let i = 0;
+  const fail = message => { throw new Error(`Grammar: ${message} (near character ${i + 1}).`); };
+  while (i < source.length) {
+    if (/\s/.test(source[i])) { i++; continue; }
+    if (source.startsWith('--', i) || source.startsWith('//', i)) { while (i < source.length && source[i] !== '\n') i++; continue; }
+    if (source.startsWith('/*', i) || source.startsWith('{-', i)) {
+      const close = source.startsWith('/*', i) ? '*/' : '-}';
+      const end = source.indexOf(close, i + 2);
+      if (end < 0) fail('unclosed comment');
+      i = end + 2; continue;
+    }
+    if (source[i] === '"') {
+      const start = i++;
+      while (i < source.length && source[i] !== '"') { if (source[i] === '\\') i++; i++; }
+      if (i >= source.length) fail('unclosed terminal');
+      let value;
+      try { value = JSON.parse(source.slice(start, ++i)); } catch { fail('invalid quoted terminal'); }
+      if (!value) fail('empty terminals are not allowed; use an empty right-hand side');
+      tokens.push({kind:'terminal', value, start, end:i}); continue;
+    }
+    if (source.startsWith('::=', i)) { tokens.push({kind:'::=',start:i,end:i+3}); i += 3; continue; }
+    if ('.;[]'.includes(source[i])) { tokens.push({kind:source[i],start:i,end:i+1}); i++; continue; }
+    const word = /^[\p{L}_][\p{L}\p{N}_'-]*/u.exec(source.slice(i));
+    if (!word) fail(`unexpected ${JSON.stringify(source[i])}`);
+    tokens.push({kind:'word', value:word[0],start:i,end:i+word[0].length}); i += word[0].length;
+  }
+  let p = 0;
+  function take(kind) { const t = tokens[p++]; if (!t || t.kind !== kind) throw new Error(`Grammar: expected ${kind} near ${tokens[p - 1]?.value || tokens[p - 1]?.kind || 'end of grammar'}.`); return t; }
+  function category() { if (tokens[p]?.kind === '[') { p++; const name = '[' + category() + ']'; take(']'); return name; } return take('word').value; }
+  const rules = [], labels = new Set();
+  let entry = null;
+  while (p < tokens.length) {
+    if (tokens[p].value === 'entrypoints' && tokens[p + 1]?.kind !== '.') { p++; entry = category(); take(';'); continue; }
+    const labelToken = take('word'), label = labelToken.value; take('.');
+    const lhs = category(); take('::=');
+    const rhs = [];
+    while (tokens[p] && tokens[p].kind !== ';') rhs.push(tokens[p].kind === 'terminal' ? tokens[p++] : {kind:'category', value:category()});
+    const endToken = take(';');
+    if (labels.has(label)) throw new Error(`Grammar: duplicate action label “${label}”. Give each production a unique label.`);
+    labels.add(label); rules.push({label,lhs,rhs,start:labelToken.start,labelEnd:labelToken.end,end:endToken.end});
+  }
+  if (!rules.length) throw new Error('Grammar: enter at least one labelled production.');
+  const categories = new Set(rules.map(r => r.lhs));
+  const builtins = new Set(['Ident','Integer','Double','String','Char']);
+  for (const r of rules) for (const symbol of r.rhs) if (symbol.kind === 'category' && !categories.has(symbol.value) && !builtins.has(symbol.value)) throw new Error(`Grammar: category “${symbol.value}” has no production. Use quotes for a terminal. Custom token declarations and LBNF macros must be expanded into labelled productions.`);
+  if (entry && !categories.has(entry)) throw new Error(`Grammar: entrypoint “${entry}” has no production.`);
+  return {rules, start:entry || rules[0].lhs, categories};
+}
+
+function tokenize(input, grammar) {
+  const literals = [...new Set(grammar.rules.flatMap(r => r.rhs.filter(s => s.kind === 'terminal').map(s => s.value)))];
+  const used = new Set(grammar.rules.flatMap(r => r.rhs.filter(s => s.kind === 'category' && !grammar.categories.has(s.value)).map(s => s.value)));
+  const patterns = {Ident:/^[\p{L}_][\p{L}\p{N}_']*/u, Integer:/^\d+/, Double:/^\d+\.\d+(?:[eE][+-]?\d+)?/, String:/^"(?:[^"\\\n]|\\.)*"/, Char:/^'(?:[^'\\\n]|\\.)'/};
+  const result = [];
+  let i = 0;
+  while (i < input.length) {
+    if (/\s/.test(input[i])) { i++; continue; }
+    let best = null;
+    for (const value of literals) if (input.startsWith(value, i) && (!best || value.length > best.text.length)) best = {kind:'terminal', value, text:value};
+    for (const name of used) { const match = patterns[name]?.exec(input.slice(i)); if (match && (!best || match[0].length > best.text.length)) best = {kind:'category', value:name, text:match[0]}; }
+    // Keep unrecognized input visible; attempting to shift it produces ERROR.
+    if (!best) best = {kind:'unknown', value:input[i], text:String.fromCodePoint(input.codePointAt(i))};
+    result.push({...best, start:i}); i += best.text.length;
+  }
+  return result;
+}
+
+// LR(0) construction uses the entrypoint productions as the initial kernel.
+const symbolKey = s => JSON.stringify([s.kind,s.value]);
+const kernelKey = items => items.map(i => `${i.r}:${i.d}`).sort().join('|');
+function buildTable(grammar) {
+  const terminals=[], nonterminals=[], seen=new Set(), byCategory=new Map();
+  grammar.rules.forEach((rule,r) => {
+    if (!byCategory.has(rule.lhs)) byCategory.set(rule.lhs,[]);
+    byCategory.get(rule.lhs).push(r);
+    const lhs={kind:'category',value:rule.lhs};
+    for (const symbol of [lhs,...rule.rhs]) {
+      const key=symbolKey(symbol);
+      if (!seen.has(key)) { seen.add(key); (symbol.kind==='category' && grammar.categories.has(symbol.value) ? nonterminals : terminals).push(symbol); }
+    }
+  });
+  function closure(kernel) {
+    const items=kernel.map(i=>({...i})), found=new Set(items.map(i=>`${i.r}:${i.d}`));
+    for (let index=0;index<items.length;index++) {
+      const item=items[index], symbol=grammar.rules[item.r].rhs[item.d];
+      if (symbol?.kind!=='category') continue;
+      for (const r of byCategory.get(symbol.value)||[]) {
+        const key=`${r}:0`;
+        if (!found.has(key)) { found.add(key); items.push({r,d:0}); }
+      }
+    }
+    return items;
+  }
+  const states=[], byKernel=new Map();
+  function stateFor(kernel) {
+    const key=kernelKey(kernel);
+    if (byKernel.has(key)) return byKernel.get(key);
+    if (states.length>=4096) throw new Error('Grammar: LR(0) automaton exceeds 4096 states.');
+    const state={id:states.length,kernel,items:closure(kernel),transitions:new Map(),reductions:[]};
+    states.push(state); byKernel.set(key,state); return state;
+  }
+  stateFor(byCategory.get(grammar.start).map(r=>({r,d:0})));
+  for (let index=0;index<states.length;index++) {
+    const state=states[index], groups=new Map();
+    for (const item of state.items) {
+      const symbol=grammar.rules[item.r].rhs[item.d];
+      if (!symbol) { state.reductions.push(item.r); continue; }
+      const key=symbolKey(symbol);
+      if (!groups.has(key)) groups.set(key,{symbol,items:[]});
+      groups.get(key).items.push({r:item.r,d:item.d+1});
+    }
+    for (const [key,group] of groups) state.transitions.set(key,{symbol:group.symbol,to:stateFor(group.items).id});
+    const conflicts=[];
+    if (state.reductions.length>1) conflicts.push('Reduce/reduce conflict');
+    if (state.reductions.length && [...state.transitions.values()].some(t=>terminals.some(s=>symbolKey(s)===symbolKey(t.symbol)))) conflicts.push('Shift/reduce conflict');
+    state.conflict=conflicts.join('; ');
+  }
+  return {states,terminals,nonterminals};
+}
+function accepted(state,model) {
+  return !state.error && state.offset===model.tokens.length && state.stack.length===1 && state.stack[0].kind==='category' && state.stack[0].value===model.grammar?.start;
+}
+function availableActions(state,model) {
+  if (!model.table || state.error || accepted(state,model)) return [];
+  const top=model.table.states[state.numbers.at(-1)], actions=[];
+  for (const r of top.reductions) actions.push({type:'reduce',rule:r,id:'r:'+model.grammar.rules[r].label});
+  const token=model.tokens[state.offset], shift=token && top.transitions.get(symbolKey(token));
+  if (shift) actions.push({type:'shift',to:shift.to,symbol:token,id:'.'});
+  return actions;
+}
+function stepParser(previous,id,model) {
+  const state={stack:previous.stack.slice(),numbers:previous.numbers.slice(),offset:previous.offset};
+  const action=availableActions(previous,model).find(a=>a.id===id);
+  if (!action) return {...state,error:'This action is unavailable in the current parse table.'};
+  if (action.type==='shift') {
+    state.stack.push(model.tokens[state.offset++]); state.numbers.push(action.to);
+  } else {
+    const rule=model.grammar.rules[action.rule], count=rule.rhs.length, start=state.stack.length-count;
+    if (start<0 || !rule.rhs.every((s,i)=>symbolKey(s)===symbolKey(state.stack[start+i]))) return {...state,error:'The stack does not match this reduction.'};
+    state.stack=state.stack.slice(0,start); state.numbers=state.numbers.slice(0,state.numbers.length-count);
+    const symbol={kind:'category',value:rule.lhs,text:rule.lhs};
+    const target=model.table.states[state.numbers.at(-1)].transitions.get(symbolKey(symbol));
+    state.stack.push(symbol);
+    // Without an augmented start rule the final entrypoint reduction needs no goto.
+    if (target) state.numbers.push(target.to);
+    else if (!accepted(state,model)) return {...state,error:`No goto entry for ${rule.lhs}.`};
+  }
+  return state;
+}
+function replay(actions,model) {
+  const states=[{stack:[],numbers:[0],offset:0}], transitions=[];
+  if (!model.grammar || !model.table) {
+    states.push({...states[0],error:model.grammarError}); transitions.push({text:'✗',error:model.grammarError});
+    return {states,transitions};
+  }
+  for (const id of actions) {
+    const next=stepParser(states.at(-1),id,model);
+    transitions.push({text:next.error ? '✗' : id==='.' ? '.' : id.slice(2),error:next.error}); states.push(next);
+    if (next.error) break;
+  }
+  return {states,transitions};
+}
+const $=id=>document.getElementById(id);
+const element=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node;};
+let game=null, activeTraceIndex=0, selectedAction=0, selectedTableAction=null;
+function activeState() { return replay(game.played.slice(0,game.cursor),game).states.at(-1); }
+function syncGrammarScroll() {
+  $('grammar-highlight').scrollTop=$('grammar').scrollTop;
+  $('grammar-highlight').scrollLeft=$('grammar').scrollLeft;
+}
+function renderGrammar(active) {
+  const available=new Set(availableActions(active,game).filter(a=>a.type==='reduce').map(a=>a.rule));
+  const fragment=document.createDocumentFragment();let position=0;
+  (game.grammar?.rules||[]).forEach((rule,index)=>{
+    fragment.append(document.createTextNode(game.source.slice(position,rule.start)));
+    const span=element('span','grammar-rule'+(available.has(index)?' available':''));
+    span.append(element('span','rule-label',game.source.slice(rule.start,rule.labelEnd)),document.createTextNode(game.source.slice(rule.labelEnd,rule.end)));
+    fragment.append(span);position=rule.end;
+  });
+  fragment.append(document.createTextNode(game.source.slice(position)+'\n'));
+  $('grammar-highlight').replaceChildren(fragment);syncGrammarScroll();
+}
+function stackNode(state) {
+  const node=element('span','stack');node.append(element('sup','',String(state.numbers[0])));
+  state.stack.forEach((symbol,index)=>{
+    node.append(document.createTextNode(symbol.text));
+    if (state.numbers[index+1]!==undefined) node.append(element('sup','',String(state.numbers[index+1])));
+  });return node;
+}
+function focusStep(index) {
+  game.cursor=Math.max(0,Math.min(game.played.length,index));selectedAction=0;$('url').value='';render();$('table-scroll').focus();followActiveRow();
+}
+function execute(id) {
+  const actions=availableActions(activeState(),game);
+  if (!actions.some(a=>a.id===id)) return;
+  game.played=game.played.slice(0,game.cursor);game.played.push(id);game.cursor++;selectedAction=0;
+  $('url').value='';render();$('table-scroll').focus();followActiveRow();
+}
+function renderTable(active) {
+  const head=element('thead'), header=element('tr'), body=element('tbody');
+  const table=game.table;
+  for (const title of ['State','Reduce']) {
+    const cell=element('th','',title);cell.scope='col';if(title==='Reduce')cell.title='Parser reduces with given rule';header.append(cell);
+  }
+  for (const symbol of table ? [...table.terminals,...table.nonterminals] : []) {
+    const cell=element('th','',symbol.value);cell.scope='col';
+    cell.title=game.grammar.categories.has(symbol.value) && symbol.kind==='category' ? `Parser completed ${symbol.value} and enters given state` : `Parser shifts token ${symbol.value} and enters given state`;
+    header.append(cell);
+  }
+  head.append(header);
+  selectedTableAction=null;
+  const actions=availableActions(active,game);selectedAction=actions.length ? (selectedAction+actions.length)%actions.length : 0;
+  const activeNumber=active.error ? -1 : active.numbers.at(-1);
+  function actionNode(text,id) {
+    const index=actions.findIndex(a=>a.id===id), available=index>=0;
+    const node=element('button','table-action'+(available?' available':'')+(available&&index===selectedAction?' selected':''),text);
+    node.type='button';node.tabIndex=-1;node.disabled=!available;
+    if(available&&index===selectedAction)selectedTableAction=node;
+    node.setAttribute('aria-label',id==='.'?'Shift '+game.tokens[active.offset]?.text:'Reduce '+text);
+    node.setAttribute('aria-pressed',String(available&&index===selectedAction));
+    if(available)node.addEventListener('click',()=>execute(id));
+    return node;
+  }
+  for (const state of table?.states||[]) {
+    const row=element('tr'), stateCell=element('td',state.conflict?'state-conflict':'',String(state.id));
+    if(state.conflict)stateCell.title=state.conflict;
+    const reduce=element('td',state.conflict?'conflict':'');reduce.title=state.conflict;
+    const here=state.id===activeNumber;
+    if(here&&actions.some(a=>a.type==='reduce'))reduce.className+=' available';
+    state.reductions.forEach((r,index)=>{if(index)reduce.append(document.createTextNode(', '));
+      const label=game.grammar.rules[r].label;
+      // The same label may occur in several states; only the current row is actionable.
+      reduce.append(here?actionNode(label,'r:'+label):element('span','',label));
+    });row.append(stateCell,reduce);
+    for(const symbol of [...table.terminals,...table.nonterminals]) {
+      const transition=state.transitions.get(symbolKey(symbol)), cell=element('td');
+      const shift=here&&transition&&actions.some(a=>a.type==='shift'&&symbolKey(a.symbol)===symbolKey(symbol));
+      if(shift){cell.className='available';cell.append(actionNode(String(transition.to),'.'));}
+      else if(transition)cell.textContent=String(transition.to);
+      row.append(cell);
+    }body.append(row);
+  }
+  $('parse-table').replaceChildren(head,body);
+  followTableAction();
+}
+function render() {
+  const current=replay(game.played.slice(0,game.cursor),game), complete=replay(game.played,game);
+  const active=current.states.at(-1);activeTraceIndex=current.states.length-1;
+  const states=active.error?current.states:complete.states, transitions=active.error?current.transitions:complete.transitions;
+  renderGrammar(active);renderTable(active);
+  const first=$('initial-state');first.className='state-row'+(activeTraceIndex===0?' current':'');
+  $('initial-pointer').textContent=activeTraceIndex===0?'►':'';
+  $('initial-action').textContent=transitions[0]?.text||'';
+  $('initial-action').style.opacity=activeTraceIndex===0&&transitions.length?'.35':'';
+  first.onclick=event=>{if(event.target!==$('parser-input'))focusStep(0);};
+  $('parser-input').style.width=Math.max(12,[...game.input].length+1)+'ch';
+  const fragment=document.createDocumentFragment();
+  states.slice(1).forEach((state,offset)=>{
+    const index=offset+1, isActive=index===activeTraceIndex;
+    const row=element('div','state-row'+(isActive?' current':'')+(index>activeTraceIndex?' future':'')+(accepted(state,game)?' accepted':''));
+    if(isActive)row.setAttribute('aria-current','step');
+    row.tabIndex=-1;row.addEventListener('click',()=>focusStep(index));
+    const content=element('div','state-content');content.append(element('span','pointer',isActive?'►':''));
+    const stuck=isActive&&!state.error&&!accepted(state,game)&&!availableActions(state,game).length;
+    if(state.error||stuck){content.append(element('span','error-text','ERROR'));row.title=state.error||'No parser action is available for the remaining input.';}
+    else {
+      const remaining=state.offset<game.tokens.length?game.input.slice(game.tokens[state.offset].start):'';
+      content.append(stackNode(state),element('span','dot','·'),element('span','remaining',remaining));
+      if(accepted(state,game))row.title='Parsing finished successfully';
+    }
+    const transition=transitions[index],action=element('span','action'+(transition?.error?' error-text':''),transition?.text||'');
+    if(transition?.error)action.title=transition.error;
+    if(isActive&&transition)action.style.opacity='.35';
+    row.append(content,action);fragment.append(row);
+  });
+  // An invalid initial token has no action and no history row yet.
+  if(activeTraceIndex===0&&!accepted(active,game)&&!availableActions(active,game).length&&game.table) {
+    const row=element('div','state-row current');row.append(element('div','state-content error-text','    ERROR'));fragment.append(row);
+  }
+  $('history').replaceChildren(fragment);followActiveRow();
+}
+function followTableAction() {
+  if(document.activeElement===$('table-scroll'))selectedTableAction?.scrollIntoView?.({block:'nearest',inline:'nearest'});
+}
+function followActiveRow() {
+  followTableAction();
+  if(document.activeElement!==$('table-scroll'))return;
+  const row=activeTraceIndex?$('history').children[activeTraceIndex-1]:$('initial-state'),box=$('states');if(!row)return;
+  const top=row.offsetTop-$('trace').offsetTop,heading=$('state-heading').offsetHeight;
+  if(top<box.scrollTop+heading)box.scrollTop=Math.max(0,top-heading);
+  else if(top+row.offsetHeight>box.scrollTop+box.clientHeight)box.scrollTop=top+row.offsetHeight-box.clientHeight;
+}
+function refreshModel() {
+  game.source=$('grammar').value;game.input=$('parser-input').value;
+  try {game.grammar=parseGrammar(game.source);game.table=buildTable(game.grammar);game.grammarError='';game.tokens=tokenize(game.input,game.grammar);}
+  catch(error){game.grammar=null;game.table=null;game.grammarError=error.message;game.tokens=[];}
+  $('grammar').setAttribute('aria-invalid',String(!!game.grammarError));
+  $('grammar-heading').className=game.grammarError?'error-text':'';
+  selectedAction=0;$('url').value='';render();
+}
+// Both separators retain proportions as the browser window changes size.
+const panels = $('panels'), divider = $('panel-divider');
+const historyPanel = $('history-panel'), actionDivider = $('action-divider');
+let actionShare = null;
+function splitBounds() {
+  const width = panels.getBoundingClientRect().width;
+  return {width,min:Math.min(120,width*.4)/width*100,max:(width-Math.min(170,width*.5))/width*100};
+}
+function setSplit(percent) {
+  const bounds = splitBounds(); if (!bounds.width) return;
+  const value = Math.max(bounds.min,Math.min(bounds.max,percent));
+  panels.style.setProperty('--grammar-width',value+'%');
+  divider.setAttribute('aria-valuemin',String(Math.round(bounds.min)));
+  divider.setAttribute('aria-valuemax',String(Math.round(bounds.max)));
+  divider.setAttribute('aria-valuenow',String(Math.round(value)));
+  divider.setAttribute('aria-valuetext',`Grammar ${Math.round(value)}%, parser ${Math.round(100-value)}%`);
+}
+function actionRect() {
+  return {left:historyPanel.getBoundingClientRect().left,width:$('states').clientWidth};
+}
+function actionBounds() {
+  const {width} = actionRect();
+  return {width,min:Math.min(120,width*.55)/width*100,max:(width-Math.min(54,width*.25))/width*100};
+}
+function setActionSplit(percent,persist = true) {
+  const bounds = actionBounds(); if (!bounds.width) return;
+  const value = Math.max(bounds.min,Math.min(bounds.max,percent));
+  if (persist) actionShare = (100-value)/100;
+  historyPanel.style.setProperty('--action-width',bounds.width*(100-value)/100+'px');
+  actionDivider.setAttribute('aria-valuemin',String(Math.round(bounds.min)));
+  actionDivider.setAttribute('aria-valuemax',String(Math.round(bounds.max)));
+  actionDivider.setAttribute('aria-valuenow',String(Math.round(value)));
+  actionDivider.setAttribute('aria-valuetext',`Stack/input ${Math.round(value)}%, action ${Math.round(100-value)}%`);
+}
+function currentActionSplit() {
+  const width = actionBounds().width;
+  const actionWidth = parseFloat(getComputedStyle(historyPanel).getPropertyValue('--action-width'));
+  return (width-actionWidth)/width*100;
+}
+function bindSplitter(handle,frame,rect,bounds,current,update) {
+  let dragging = false;
+  handle.addEventListener('pointerdown',event => {
+    if (event.button !== 0) return;
+    event.preventDefault(); dragging = true; handle.focus({preventScroll:true});
+    handle.setPointerCapture(event.pointerId); frame.classList.add('resizing');
+  });
+  handle.addEventListener('pointermove',event => {
+    if (!dragging) return;
+    const area = rect(); update((event.clientX-area.left)/area.width*100);
+  });
+  const finish = () => { dragging = false; frame.classList.remove('resizing'); };
+  for (const name of ['pointerup','pointercancel','lostpointercapture']) handle.addEventListener(name,finish);
+  handle.addEventListener('keydown',event => {
+    if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+    event.preventDefault(); const limits = bounds();
+    update(event.key === 'Home' ? limits.min : event.key === 'End' ? limits.max : current()+(event.key === 'ArrowLeft' ? -2 : 2));
+  });
+}
+bindSplitter(divider,panels,() => panels.getBoundingClientRect(),splitBounds,() => parseFloat(getComputedStyle(panels).getPropertyValue('--grammar-width')),setSplit);
+bindSplitter(actionDivider,historyPanel,actionRect,actionBounds,currentActionSplit,setActionSplit);
+function refreshActionSplit() {
+  const width = actionBounds().width; if (!width) return;
+  const defaultWidth = parseFloat(getComputedStyle($('game')).getPropertyValue('--action-width'));
+  setActionSplit(actionShare === null ? (width-defaultWidth)/width*100 : (1-actionShare)*100,false);
+}
+function measurePanels() {
+  historyPanel.style.setProperty('--scrollbar-width',($('states').offsetWidth-$('states').clientWidth)+'px');
+  setSplit(parseFloat(getComputedStyle(panels).getPropertyValue('--grammar-width')));
+  refreshActionSplit(); syncGrammarScroll(); followActiveRow();
+}
+if (typeof ResizeObserver === 'function') {
+  const observer = new ResizeObserver(measurePanels); observer.observe(panels); observer.observe($('states'));
+}
+// The horizontal divider changes the vertical ratio, preserving the page width.
+const tableDivider=$('table-divider');let tableDragging=false;
+function setTableSplit(value) {
+  value=Math.max(20,Math.min(80,value));$('game').style.setProperty('--history-share',value+'%');
+  tableDivider.setAttribute('aria-valuenow',String(Math.round(value)));
+}
+tableDivider.addEventListener('pointerdown',event=>{
+  if(event.button!==0)return;event.preventDefault();tableDragging=true;tableDivider.focus();tableDivider.setPointerCapture(event.pointerId);$('game').classList.add('table-resizing');
+});
+tableDivider.addEventListener('pointermove',event=>{
+  if(!tableDragging)return;const rect=$('game').getBoundingClientRect();setTableSplit((event.clientY-rect.top)/rect.height*100);
+});
+for(const name of ['pointerup','pointercancel','lostpointercapture'])tableDivider.addEventListener(name,()=>{tableDragging=false;$('game').classList.remove('table-resizing');});
+tableDivider.addEventListener('keydown',event=>{
+  if(!['ArrowUp','ArrowDown','Home','End'].includes(event.key))return;event.preventDefault();
+  const value=parseFloat(getComputedStyle($('game')).getPropertyValue('--history-share'));
+  setTableSplit(event.key==='Home'?20:event.key==='End'?80:value+(event.key==='ArrowUp'?-2:2));
+});
+$('parser-input').addEventListener('focus',()=>{$('states').scrollTop=0;});
+$('grammar').addEventListener('input',refreshModel);
+$('grammar').addEventListener('scroll',syncGrammarScroll);
+$('grammar').addEventListener('blur',()=>renderGrammar(activeState()));
+$('parser-input').addEventListener('input',refreshModel);
+$('table-scroll').addEventListener('keydown',event=>{
+  if(!['Enter',' ','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Backspace'].includes(event.key)||event.altKey||event.metaKey||event.ctrlKey)return;
+  event.preventDefault();
+  if(event.key==='ArrowUp'||event.key==='Backspace'){focusStep(game.cursor-1);return;}
+  if(event.key==='ArrowDown'){if(game.cursor<game.played.length)focusStep(game.cursor+1);return;}
+  const actions=availableActions(activeState(),game);if(!actions.length)return;
+  if(event.key==='ArrowLeft'||event.key==='ArrowRight'){selectedAction=(selectedAction+(event.key==='ArrowLeft'?-1:1)+actions.length)%actions.length;renderTable(activeState());}
+  else execute(actions[selectedAction]?.id);
+});
+$('save').addEventListener('click',()=>{
+  const url=new URL(location.href);url.search='';url.hash='';
+  url.searchParams.set('grammar',game.source);url.searchParams.set('input',game.input);
+  url.searchParams.set('played',JSON.stringify(game.played));url.searchParams.set('user-input',JSON.stringify(game.played.slice(0,game.cursor)));
+  url.searchParams.set('focus',String(selectedAction));
+  $('url').value=url.href;$('url').focus();$('url').select();
+});
+$('url').addEventListener('click',()=>$('url').select());
+const params=new URLSearchParams(location.search);
+function readActions(value) {
+  try {const result=JSON.parse(value||'[]');return Array.isArray(result)&&result.every(a=>typeof a==='string')?result:[];}catch{return [];}
+}
+const actions=readActions(params.get('user-input')??params.get('actions'));
+let played=readActions(params.get('played')??JSON.stringify(actions));
+if(!actions.every((a,i)=>played[i]===a))played=actions;
+$('grammar').value=params.get('grammar')??params.get('lbnf')??DEFAULT_GRAMMAR;
+$('parser-input').value=params.get('input')??DEFAULT_INPUT;
+game={played,cursor:actions.length};refreshModel();
+selectedAction=Math.max(0,Number.parseInt(params.get('focus'),10)||0);render();
+$('table-scroll').focus();followActiveRow();
+</script>
+</body>
+</html>

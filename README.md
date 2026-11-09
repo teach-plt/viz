@@ -5,6 +5,8 @@
 [shift-red2](shift-red2.html): A compact variant with the LBNF editor directly
 beside the parsing history. Edit parser input in the first Stack · Input row.
 
+[table-parse](table-parse.html): Run shift-reduce parsing with a computed LR(0) parse table.
+
 [lr-gen](lr-gen.html): Build an LR(0) automaton and its parse table interactively.
 
 ## Grammar format: LBNF
