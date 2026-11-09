@@ -14,7 +14,7 @@
 </head>
 <body>
 <main>
-<header><h1>lr<span>-gen</span></h1><div class="badge">Build an LR(0) automaton, one step at a time.</div></header>
+<header><h1>LR<span>-gen</span></h1><div class="badge">Build an LR(0) automaton.</div></header>
 <section class="board" aria-label="LR automaton construction">
   <section class="steps-panel"><div class="panel-head"><span class="heading" id="steps-heading">STEPS</span><span class="count" id="step-count"></span></div><div id="step-list" aria-labelledby="steps-heading"></div></section>
   <section class="graph-panel"><div class="panel-head"><span class="heading">LR(0)-AUTOMATON</span><div class="graph-actions"><span id="graph-count" class="count"></span><button id="motion" aria-pressed="true" title="Toggle animated layout">MOTION ON</button><button id="fit" title="Fit the automaton in the view">FIT</button></div></div><div id="graph" role="img" aria-label="LR(0) states and labelled transitions"></div></section>
@@ -22,8 +22,8 @@
 </section>
 <div class="key-help" id="step-help"><span><kbd>Enter</kbd> / <kbd>↓</kbd> confirm</span><span><kbd>↑</kbd> undo</span><span><kbd>←</kbd> <kbd>→</kbd> cycle choices</span><span>Type to filter · click a step to revisit</span></div>
 <section class="lower">
-  <div class="grammar-panel"><div class="section-title"><label for="grammar">LBNF GRAMMAR</label><span class="count">Edit, then return to Steps</span></div><div id="accept-rule" aria-label="Automatically added start production"></div><textarea id="grammar" spellcheck="false" aria-describedby="grammar-hint"></textarea><span id="grammar-hint" class="sr-only">Use labelled LBNF productions. Returning focus to Steps applies a changed grammar and resets the construction.</span></div>
-  <div class="table-panel"><div class="section-title"><h2>PARSE TABLE</h2><span id="conflict-count" class="conflict-note"></span></div><div class="table-scroll"><table id="parse-table" aria-label="LR(0) parse table"></table></div><p class="legend"><b>Bold border</b> · all reductions recorded &nbsp; <b style="color:var(--red)">Red</b> · LR(0) conflict &nbsp; Grey · undone or closure items</p></div>
+  <div class="grammar-panel"><div class="section-title"><label for="grammar">LBNF GRAMMAR</label><span class="count">&nbsp;</span></div><div id="accept-rule" aria-label="Automatically added start production"></div><textarea id="grammar" spellcheck="false" aria-describedby="grammar-hint"></textarea><span id="grammar-hint" class="sr-only">Use labelled LBNF productions. Returning focus to Steps applies a changed grammar and resets the construction.</span></div>
+  <div class="table-panel"><div class="section-title"><h2>PARSE TABLE</h2><span id="conflict-count" class="conflict-note"></span></div><div class="table-scroll"><table id="parse-table" aria-label="LR(0) parse table"></table>
 </section>
 <div class="bottom"><button id="clear">CLEAR</button><button id="save">SAVE ↗</button><input id="url" aria-label="Saved game URL" readonly placeholder="Save a link to the confirmed steps" spellcheck="false"></div>
 <p id="notice" role="status" aria-live="polite"></p>
@@ -413,7 +413,7 @@ $('save').addEventListener('click',() => {
   render();
   const url = new URL(location.href); url.search = ''; url.hash = '';
   url.searchParams.set('grammar',appliedSource); url.searchParams.set('steps',JSON.stringify(history.slice(0,cursor)));
-  $('url').value = url.href; $('url').focus(); $('url').select(); $('notice').textContent = 'Link selected. Only the confirmed steps are saved.';
+  $('url').value = url.href; $('url').focus(); $('url').select(); $('notice').textContent = 'Link selected.';
 });
 $('url').addEventListener('click',() => $('url').select());
 $('clear').addEventListener('click',() => {
