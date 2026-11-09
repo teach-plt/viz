@@ -178,11 +178,18 @@ function buildTable(grammar) {
   return {states,terminals,nonterminals};
 }
 function accepted(state,model) {
-  return !state.error && state.offset===model.tokens.length && state.stack.length===1 && state.stack[0].kind==='category' && state.stack[0].value===model.grammar?.start;
+  const finalStack=!state.error && state.offset===model.tokens.length && state.stack.length===1 && state.stack[0].kind==='category' && state.stack[0].value===model.grammar?.start;
+  if(!finalStack)return false;
+  // Finish a pending goto when one exists, even for an entrypoint reduction.
+  return state.numbers.length>state.stack.length || !model.table?.states[state.numbers.at(-1)].transitions.has(symbolKey(state.stack[0]));
 }
 function availableActions(state,model) {
   if (!model.table || state.error || accepted(state,model)) return [];
   const top=model.table.states[state.numbers.at(-1)], actions=[];
+  if(state.numbers.length===state.stack.length) {
+    const symbol=state.stack.at(-1), target=top.transitions.get(symbolKey(symbol));
+    return target ? [{type:'goto',symbol,to:target.to,id:'g:'+symbol.value}] : [];
+  }
   for (const r of top.reductions) actions.push({type:'reduce',rule:r,id:'r:'+model.grammar.rules[r].label});
   const token=model.tokens[state.offset], shift=token && top.transitions.get(symbolKey(token));
   if (shift) actions.push({type:'shift',to:shift.to,symbol:token,id:'.'});
@@ -194,6 +201,8 @@ function stepParser(previous,id,model) {
   if (!action) return {...state,error:'This action is unavailable in the current parse table.'};
   if (action.type==='shift') {
     state.stack.push(model.tokens[state.offset++]); state.numbers.push(action.to);
+  } else if(action.type==='goto') {
+    state.numbers.push(action.to);
   } else {
     const rule=model.grammar.rules[action.rule], count=rule.rhs.length, start=state.stack.length-count;
     if (start<0 || !rule.rhs.every((s,i)=>symbolKey(s)===symbolKey(state.stack[start+i]))) return {...state,error:'The stack does not match this reduction.'};
@@ -202,8 +211,7 @@ function stepParser(previous,id,model) {
     const target=model.table.states[state.numbers.at(-1)].transitions.get(symbolKey(symbol));
     state.stack.push(symbol);
     // Without an augmented start rule the final entrypoint reduction needs no goto.
-    if (target) state.numbers.push(target.to);
-    else if (!accepted(state,model)) return {...state,error:`No goto entry for ${rule.lhs}.`};
+    if (!target && !accepted(state,model)) return {...state,error:`No goto entry for ${rule.lhs}.`};
   }
   return state;
 }
@@ -215,7 +223,7 @@ function replay(actions,model) {
   }
   for (const id of actions) {
     const next=stepParser(states.at(-1),id,model);
-    transitions.push({text:next.error ? '✗' : id==='.' ? '.' : id.slice(2),error:next.error}); states.push(next);
+    transitions.push({text:next.error ? '✗' : id==='.' ? 'shift' : id.startsWith('g:') ? 'goto '+id.slice(2) : id.slice(2),error:next.error}); states.push(next);
     if (next.error) break;
   }
   return {states,transitions};
@@ -271,12 +279,12 @@ function renderTable(active) {
   selectedTableAction=null;
   const actions=availableActions(active,game);selectedAction=actions.length ? (selectedAction+actions.length)%actions.length : 0;
   const activeNumber=active.numbers.at(-1);
-  function actionNode(text,id) {
-    const index=actions.findIndex(a=>a.id===id), available=index>=0;
+  function actionNode(text,id,eligible=true,label) {
+    const index=eligible ? actions.findIndex(a=>a.id===id) : -1, available=index>=0;
     const node=element('button','table-action'+(available?' available':'')+(available&&index===selectedAction?' selected':''),text);
     node.type='button';node.tabIndex=-1;node.disabled=!available;
     if(available&&index===selectedAction)selectedTableAction=node;
-    node.setAttribute('aria-label',id==='.'?'Shift '+game.tokens[active.offset]?.text:'Reduce '+text);
+    node.setAttribute('aria-label',label || (id.startsWith('g:')?'Goto '+id.slice(2):'Reduce '+text));
     node.setAttribute('aria-pressed',String(available&&index===selectedAction));
     if(available)node.addEventListener('click',()=>execute(id));
     return node;
@@ -292,13 +300,15 @@ function renderTable(active) {
     state.reductions.forEach((r,index)=>{if(index)reduce.append(document.createTextNode(', '));
       const label=game.grammar.rules[r].label;
       // The same label may occur in several states; only the current row is actionable.
-      reduce.append(here?actionNode(label,'r:'+label):element('span','',label));
+      reduce.append(actionNode(label,'r:'+label,here));
     });row.append(stateCell,reduce);
     for(const symbol of [...table.terminals,...table.nonterminals]) {
       const transition=state.transitions.get(symbolKey(symbol)), cell=element('td',table.terminals.includes(symbol)?'shift-cell':'');
-      const shift=here&&transition&&actions.some(a=>a.type==='shift'&&symbolKey(a.symbol)===symbolKey(symbol));
-      if(shift){cell.className+=' available';cell.append(actionNode(String(transition.to),'.'));}
-      else if(transition)cell.textContent=String(transition.to);
+      const terminal=table.terminals.includes(symbol), type=terminal?'shift':'goto';
+      const enabled=here&&transition&&actions.some(a=>a.type===type&&symbolKey(a.symbol)===symbolKey(symbol));
+      if(enabled)cell.className+=' available';
+      // Every value uses identical markup and padding, independent of action focus.
+      if(transition)cell.append(actionNode(String(transition.to),terminal?'.':'g:'+symbol.value,enabled,(terminal?'Shift ':'Goto ')+symbol.value));
       row.append(cell);
     }body.append(row);
   }

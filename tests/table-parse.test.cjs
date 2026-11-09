@@ -13,7 +13,7 @@ function load(search='') {
     setAttribute(k,v){this.attributes[k]=v}addEventListener(k,v){this.listeners[k]=v}
     focus(){document.activeElement=this}select(){this.selected=true}setSelectionRange(start,end){this.selectionStart=start;this.selectionEnd=end}
   }
-  document={activeElement:null,getElementById(id){if(!elements.has(id))elements.set(id,new Element());return elements.get(id)},createElement(){return new Element()},createTextNode(text){return Object.assign(new Element(),{textContent:text})},createDocumentFragment(){return Object.assign(new Element(),{fragment:true})}};
+  document={activeElement:null,getElementById(id){if(!elements.has(id))elements.set(id,new Element());return elements.get(id)},createElement(tag){return Object.assign(new Element(),{tagName:tag})},createTextNode(text){return Object.assign(new Element(),{textContent:text})},createDocumentFragment(){return Object.assign(new Element(),{fragment:true})}};
   const context=vm.createContext({document,URL,URLSearchParams,location:{search,href:'file:///test/table-parse.html'+search}});
   vm.runInContext(script,context);
   return {field:id=>document.getElementById(id),run:code=>vm.runInContext(code,context),edit(id,text){const field=elements.get(id);field.focus();field.value=text;field.selectionStart=field.selectionEnd=text.length;field.listeners.input();return field.value},available(){return elements.get('grammar-highlight').children.filter(c=>c.className==='grammar-rule available').map(c=>c.children[0].textContent)}};
@@ -52,13 +52,16 @@ test('shift and reduction push and pop matching symbols and interspersed states'
  const p=setup('s. S ::= A "y";\na. A ::= "x";','xy');
  key(p,' ');assert.equal(p.run('activeState().offset'),1);assert.equal(p.run('activeState().numbers.length'),2);
  key(p,'Enter');assert.equal(p.run('activeState().stack[0].value'),'A');assert.equal(p.run('activeState().numbers[0]'),0);
+ assert.equal(p.run('activeState().numbers.length'),1);
+ assert.equal(p.run('availableActions(activeState(),game)[0].type'),'goto');
+ key(p,'Enter');
  assert.equal(p.run('activeState().numbers[1]'),p.run('game.table.states[0].transitions.get(symbolKey({kind:"category",value:"A"})).to'));
  finish(p);assert.equal(p.run('activeState().stack.length'),1);assert.equal(p.run('activeState().numbers[0]'),0);
  assert.match(p.field('history').textContent,/S/);
 });
 test('epsilon and empty input finish, recursive grammar parses with explicit conflict choice',()=>{
  const p=setup('s. S ::= A;\na. A ::= ;','');finish(p);
- assert.equal(p.run('game.cursor'),2);
+ assert.equal(p.run('game.cursor'),3);
  const q=load();
  // The default LR(0) grammar has a shift/reduce conflict on *: choose shift.
  for(let n=0;n<100&&!q.run('accepted(activeState(),game)');n++) {
@@ -154,4 +157,45 @@ test('action splitter supports dragging, keyboard input, and responsive proporti
   states.clientWidth=150;page.run('refreshActionSplit()');assert.ok(width()>=37.5-1e-9);assert.ok(states.clientWidth-width()>=82.5-1e-9);
   states.clientWidth=900;page.run('refreshActionSplit()');assert.ok(Math.abs(width()-54)<1e-9);
   assert.equal(page.run('game.cursor'),1);assert.equal(page.run('game.played.length'),1);
+});
+test('reduction returns to the uncovered state and exposes only the separate goto cell',()=>{
+ const p=setup('s. S ::= A "y";\na. A ::= "x";','xy');
+ key(p,'Enter');assert.equal(p.field('initial-action').textContent,'shift');
+ key(p,'Enter');
+ assert.equal(p.run('JSON.stringify(activeState().numbers)'),'[0]');
+ assert.equal(p.run('JSON.stringify(activeState().stack.map(s=>s.value))'),'["A"]');
+ assert.equal(p.run('activeState().offset'),1);
+ assert.equal(p.run('JSON.stringify(availableActions(activeState(),game).map(a=>a.id))'),'["g:A"]');
+ const rows=p.field('parse-table').children[1].children;
+ assert.equal(rows[0].attributes['aria-current'],'true');
+ const gotoCell=rows[0].children.at(-1);
+ assert.match(gotoCell.className,/available/);assert.match(gotoCell.children[0].className,/selected/);
+ assert.equal(gotoCell.children[0].attributes['aria-label'],'Goto A');
+ p.field('save').listeners.click();const restored=load(new URL(p.field('url').value).search);
+ assert.equal(restored.run('availableActions(activeState(),game)[0].type'),'goto');
+ key(restored,' ');assert.equal(restored.run('activeState().numbers.length'),2);
+ assert.equal(restored.run('activeState().offset'),1);assert.equal(restored.run('activeState().stack.length'),1);
+ assert.match(restored.field('history').textContent,/goto A/);
+ key(restored,'ArrowUp');assert.equal(restored.run('availableActions(activeState(),game)[0].type'),'goto');
+ key(restored,'ArrowDown');assert.equal(restored.run('availableActions(activeState(),game)[0].type'),'shift');
+ finish(restored);
+});
+test('entrypoint goto is also explicit when the unaugmented table contains one',()=>{
+ const p=setup('p. S ::= S "+" T;\ns. S ::= T;\nt. T ::= "x";','x');
+ key(p,'Enter');key(p,'Enter');key(p,'Enter');key(p,'Enter');
+ assert.equal(p.run('activeState().stack[0].value'),'S');
+ assert.equal(p.run('accepted(activeState(),game)'),false);
+ assert.equal(p.run('availableActions(activeState(),game)[0].id'),'g:S');
+ key(p,'Enter');assert.equal(p.run('accepted(activeState(),game)'),true);
+});
+test('table values keep identical element types and text as focus and parser actions change',()=>{
+ const p=load();
+ function layoutContent() {
+  return p.field('parse-table').children[1].children.map(row=>row.children.slice(1).map(cell=>
+   cell.children.map(node=>[node.tagName,node.textContent])));
+ }
+ const before=layoutContent();key(p,'Enter');assert.deepEqual(layoutContent(),before);
+ key(p,'Enter');assert.deepEqual(layoutContent(),before);
+ key(p,'Enter');assert.deepEqual(layoutContent(),before);
+ key(p,'ArrowRight');assert.deepEqual(layoutContent(),before);
 });
