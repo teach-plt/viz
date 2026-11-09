@@ -2,6 +2,12 @@
 
 [shift-red](shift-red.html): The shift-red browser game for simulating a shift-reduce parser.
 
+[shift-red2](shift-red2.html): A compact variant with the LBNF editor directly
+beside the parsing history. Edit parser input in the first Stack · Input row.
+Available reductions are highlighted when the grammar editor loses focus.
+Edits replay the existing actions; incompatible actions show ERROR. SAVE
+preserves the grammar, input, actions, and undo history as a URL.
+
 [lr-gen](lr-gen.html): Build an LR(0) automaton and its parse table interactively.
 
 ## Grammar format: LBNF

@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#b93838">
+<title>shift-red2 · A compact parsing playground</title>
+<style>
+:root{color-scheme:light;--paper:#faf8f4;--ink:#292b32;--muted:#77766f;--line:#e3dfd7;--red:#b93838;--wash:#fcf0ed;--grey:#99958e;--mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:1180px;padding:54px 32px 40px;margin:auto}header{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:28px}h1{font-size:36px;letter-spacing:-1.6px;line-height:1;margin:0;font-weight:750}h1 span{color:var(--red)}.badge{border:1px solid var(--line);border-radius:30px;padding:8px 13px;font:11px var(--mono);letter-spacing:1px;white-space:nowrap}.game{background:white;border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 8px 30px #292b3205}.panels{display:grid;grid-template-columns:minmax(250px,38%) minmax(0,1fr)}.grammar-panel{min-width:0;border-right:1px solid var(--line)}.panel-head{height:46px;display:flex;align-items:center;background:#f5f3ee;border-bottom:1px solid var(--line);font-size:10px;font-weight:700;letter-spacing:1.6px;color:var(--muted)}.panel-head label,.panel-head span{padding:0 18px}.state-head{display:grid;grid-template-columns:1fr 86px}.state-head span:last-child{border-left:1px solid var(--line)}.grammar-box{height:344px;position:relative}.grammar-box textarea,.grammar-highlight{font:14px/38px var(--mono);tab-size:2;letter-spacing:normal;white-space:pre;margin:0;padding:12px 18px;width:100%;height:100%;border:0;border-radius:0;box-sizing:border-box}.grammar-box textarea{position:relative;z-index:1;display:block;resize:none;overflow:auto;background:transparent;color:transparent;caret-color:var(--ink);outline:none;scrollbar-width:thin}.grammar-box textarea:focus{color:var(--ink);background:white;box-shadow:inset 0 0 0 2px #b9383860}.grammar-highlight{position:absolute;inset:0;overflow:hidden;pointer-events:none;color:var(--grey)}.grammar-box textarea:focus + .grammar-highlight{visibility:hidden}.grammar-rule.available{color:var(--ink)}.grammar-rule.available .rule-label{color:var(--red)}.scroll{height:344px;overflow:auto;scrollbar-width:thin;padding:12px 0}.trace{width:max-content;min-width:100%}.state-row{display:grid;grid-template-columns:minmax(0,1fr) 85px;min-height:38px;font:15px/38px var(--mono)}.state-content{display:flex;align-items:center;padding:0 18px 0 10px;white-space:pre}.pointer{width:24px;flex-shrink:0;color:var(--red);font-size:12px}.stack{min-width:120px;text-align:right;padding-right:12px}.dot{color:var(--red);padding-right:12px}.remaining{padding-right:20px}.action{padding:0 18px;text-align:center;border-left:1px solid #efede7;white-space:pre}.current{background:var(--wash)}.future{opacity:.32}.error-text{color:var(--red);font-weight:700}input,textarea,button{font:inherit}#parser-input{font:15px/30px var(--mono);margin:0;padding:0 4px;border:1px solid transparent;border-radius:5px;background:transparent;color:var(--ink);height:32px;outline:none;min-width:12ch}#parser-input:focus{border-color:var(--red);background:white;box-shadow:0 0 0 2px #b9383810}.input-area{border-top:1px solid var(--line);padding:18px 22px 20px}.input-caption{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:10px}.input-caption label{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted)}.status{color:var(--muted);font-size:12px;text-align:right}.status.accepted{color:#29744e}#user-input{width:100%;padding:12px 14px;font:19px/1.5 var(--mono);background:#fdfcf9;border:1px solid var(--line);border-radius:9px;color:var(--ink);outline:none}#user-input:focus,#url:focus{border-color:var(--red);box-shadow:0 0 0 3px #b9383810}input::placeholder{color:#aaa69e}.save-area{display:flex;align-items:center;gap:18px;margin-top:22px}button{cursor:pointer;border:1px solid var(--line);border-radius:9px;background:white;color:var(--ink);font-size:11px;font-weight:700;letter-spacing:1px;padding:13px 16px;min-height:44px}button:hover{background:#efede7}button:focus-visible{outline:2px solid var(--red);outline-offset:2px}#url{min-width:0;flex:1;padding:11px 13px;font:13px/1.6 var(--mono);border:1px solid var(--line);border-radius:9px;outline:none;background:white;color:var(--ink)}.notice{min-height:24px;margin:14px 0 0;color:var(--red);font-size:13px;white-space:pre-wrap}footer{border-top:1px solid var(--line);margin-top:24px;padding-top:18px;display:flex;justify-content:space-between;gap:16px;font-size:11px;color:var(--muted)}
+@media(max-width:650px){main{padding:28px 14px}h1{font-size:30px}.badge{display:none}.panels{grid-template-columns:minmax(155px,43%) minmax(0,1fr)}.panel-head label,.panel-head span{padding-left:10px;padding-right:10px}.grammar-box textarea,.grammar-highlight{font-size:12px;padding-left:10px;padding-right:10px}.state-row,#parser-input{font-size:13px}.stack{min-width:32px}.state-head{grid-template-columns:1fr 60px}.state-row{grid-template-columns:minmax(0,1fr) 59px}.action{padding:0 8px}.save-area{gap:10px}footer{flex-direction:column;gap:4px}}
+</style>
+</head>
+<body>
+<main>
+<header><h1>shift<span>-red2</span></h1><div class="badge">Play shift-reduce parsing.</div></header>
+<section class="game" aria-label="Shift-reduce parsing game">
+  <div class="panels">
+    <section class="grammar-panel" aria-label="Editable grammar">
+      <div class="panel-head"><label for="grammar" id="grammar-heading">LBNF GRAMMAR</label></div>
+      <div class="grammar-box"><textarea id="grammar" wrap="off" spellcheck="false" autocapitalize="off" aria-label="LBNF Grammar" title="Edit the grammar directly. Available reductions are highlighted when you leave this field."></textarea><pre id="grammar-highlight" class="grammar-highlight" aria-hidden="true"></pre></div>
+    </section>
+    <section style="min-width:0" aria-label="Parsing history">
+      <div class="panel-head state-head"><span>STACK · INPUT</span><span>ACTION</span></div>
+      <div class="scroll" id="states"><div class="trace" id="trace">
+        <div class="state-row" id="initial-state"><div class="state-content"><span class="pointer" id="initial-pointer"></span><span class="stack"></span><label class="dot" for="parser-input">·</label><input id="parser-input" aria-label="Parser input (initial state)" title="Edit the parser input here. Existing actions will be replayed." autocomplete="off" autocapitalize="off" spellcheck="false"></div><span class="action" id="initial-action"></span></div>
+        <div id="history"></div>
+      </div></div>
+    </section>
+  </div>
+  <div class="input-area"><div class="input-caption"><label for="user-input">ACTIONS</label><span class="status" id="status" role="status" aria-live="polite"></span></div><input id="user-input" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Actions" placeholder="Type . to shift, or space or a label to reduce"></div>
+</section>
+<section class="save-area" aria-label="Save game"><button id="save" type="button">SAVE ↗</button><input id="url" aria-label="Saved game URL" readonly placeholder="Save a link to this exact position" spellcheck="false"></section>
+<p class="notice" id="notice" role="status" aria-live="polite"></p>
+<footer><span>Design 2026 by Andreas Abel</span><span>BSD 3-clause license</span></footer>
+</main>
+<script>
+'use strict';
+const DEFAULT_GRAMMAR = `p. S ::= S "+" F;
+m. F ::= F "*" A;
+x. A ::= "x";
+y. A ::= "y";
+z. A ::= "z";
+f. S ::= F;
+a. F ::= A;
+s. A ::= "(" S ")";`;
+const DEFAULT_INPUT = 'x+y*(x+y)+z';
+function parseGrammar(source) {
+  const tokens = [];
+  let i = 0;
+  const fail = message => { throw new Error(`Grammar: ${message} (near character ${i + 1}).`); };
+  while (i < source.length) {
+    if (/\s/.test(source[i])) { i++; continue; }
+    if (source.startsWith('--', i) || source.startsWith('//', i)) { while (i < source.length && source[i] !== '\n') i++; continue; }
+    if (source.startsWith('/*', i) || source.startsWith('{-', i)) {
+      const close = source.startsWith('/*', i) ? '*/' : '-}';
+      const end = source.indexOf(close, i + 2);
+      if (end < 0) fail('unclosed comment');
+      i = end + 2; continue;
+    }
+    if (source[i] === '"') {
+      const start = i++;
+      while (i < source.length && source[i] !== '"') { if (source[i] === '\\') i++; i++; }
+      if (i >= source.length) fail('unclosed terminal');
+      let value;
+      try { value = JSON.parse(source.slice(start, ++i)); } catch { fail('invalid quoted terminal'); }
+      if (!value) fail('empty terminals are not allowed; use an empty right-hand side');
+      tokens.push({kind:'terminal', value, start, end:i}); continue;
+    }
+    if (source.startsWith('::=', i)) { tokens.push({kind:'::=',start:i,end:i+3}); i += 3; continue; }
+    if ('.;[]'.includes(source[i])) { tokens.push({kind:source[i],start:i,end:i+1}); i++; continue; }
+    const word = /^[\p{L}_][\p{L}\p{N}_'-]*/u.exec(source.slice(i));
+    if (!word) fail(`unexpected ${JSON.stringify(source[i])}`);
+    tokens.push({kind:'word', value:word[0],start:i,end:i+word[0].length}); i += word[0].length;
+  }
+  let p = 0;
+  function take(kind) { const t = tokens[p++]; if (!t || t.kind !== kind) throw new Error(`Grammar: expected ${kind} near ${tokens[p - 1]?.value || tokens[p - 1]?.kind || 'end of grammar'}.`); return t; }
+  function category() { if (tokens[p]?.kind === '[') { p++; const name = '[' + category() + ']'; take(']'); return name; } return take('word').value; }
+  const rules = [], labels = new Set();
+  let entry = null;
+  while (p < tokens.length) {
+    if (tokens[p].value === 'entrypoints' && tokens[p + 1]?.kind !== '.') { p++; entry = category(); take(';'); continue; }
+    const labelToken = take('word'), label = labelToken.value; take('.');
+    const lhs = category(); take('::=');
+    const rhs = [];
+    while (tokens[p] && tokens[p].kind !== ';') rhs.push(tokens[p].kind === 'terminal' ? tokens[p++] : {kind:'category', value:category()});
+    const endToken = take(';');
+    if (labels.has(label)) throw new Error(`Grammar: duplicate action label “${label}”. Give each production a unique label.`);
+    labels.add(label); rules.push({label,lhs,rhs,start:labelToken.start,labelEnd:labelToken.end,end:endToken.end});
+  }
+  if (!rules.length) throw new Error('Grammar: enter at least one labelled production.');
+  const categories = new Set(rules.map(r => r.lhs));
+  const builtins = new Set(['Ident','Integer','Double','String','Char']);
+  for (const r of rules) for (const symbol of r.rhs) if (symbol.kind === 'category' && !categories.has(symbol.value) && !builtins.has(symbol.value)) throw new Error(`Grammar: category “${symbol.value}” has no production. Use quotes for a terminal. Custom token declarations and LBNF macros must be expanded into labelled productions.`);
+  if (entry && !categories.has(entry)) throw new Error(`Grammar: entrypoint “${entry}” has no production.`);
+  return {rules, start:entry || rules[0].lhs, categories};
+}
+
+function tokenize(input, grammar) {
+  const literals = [...new Set(grammar.rules.flatMap(r => r.rhs.filter(s => s.kind === 'terminal').map(s => s.value)))];
+  const used = new Set(grammar.rules.flatMap(r => r.rhs.filter(s => s.kind === 'category' && !grammar.categories.has(s.value)).map(s => s.value)));
+  const patterns = {Ident:/^[\p{L}_][\p{L}\p{N}_']*/u, Integer:/^\d+/, Double:/^\d+\.\d+(?:[eE][+-]?\d+)?/, String:/^"(?:[^"\\\n]|\\.)*"/, Char:/^'(?:[^'\\\n]|\\.)'/};
+  const result = [];
+  let i = 0;
+  while (i < input.length) {
+    if (/\s/.test(input[i])) { i++; continue; }
+    let best = null;
+    for (const value of literals) if (input.startsWith(value, i) && (!best || value.length > best.text.length)) best = {kind:'terminal', value, text:value};
+    for (const name of used) { const match = patterns[name]?.exec(input.slice(i)); if (match && (!best || match[0].length > best.text.length)) best = {kind:'category', value:name, text:match[0]}; }
+    // Keep unrecognized input visible; attempting to shift it produces ERROR.
+    if (!best) best = {kind:'unknown', value:input[i], text:String.fromCodePoint(input.codePointAt(i))};
+    result.push({...best, start:i}); i += best.text.length;
+  }
+  return result;
+}
+
+function canReduce(state, rule) {
+  if (state.error || state.stack.length < rule.rhs.length) return false;
+  const offset = state.stack.length - rule.rhs.length;
+  return rule.rhs.every((symbol,index) => {
+    const top = state.stack[offset + index];
+    return top.kind === symbol.kind && top.value === symbol.value;
+  });
+}
+
+function replay(actions, model) {
+  const states = [{stack:[], offset:0, position:0}], transitions = [];
+  if (!model.grammar) {
+    const error = model.grammarError;
+    transitions.push({action:'✗',start:0,end:actions.length,error});
+    states.push({stack:[],offset:0,position:actions.length,error});
+    return {states,transitions};
+  }
+  let i = 0;
+  while (i < actions.length) {
+    const prev = states[states.length - 1];
+    let stack = prev.stack.slice(), offset = prev.offset, error = '', action, end;
+    if (actions[i] === '.') {
+      action = '.'; end = i + 1;
+      const token = model.tokens[offset];
+      if (!token) error = 'Cannot shift: the input is empty.';
+      else if (token.kind === 'unknown') error = `No grammar token matches “${token.text}”.`;
+      else { stack.push(token); offset++; }
+    } else {
+      // The first label completed while scanning left to right wins.
+      const rule = model.grammar.rules.filter(r => actions.startsWith(r.label, i)).sort((a,b) => a.label.length - b.label.length)[0];
+      if (!rule) { error = `Unknown action at character ${i + 1}: “${actions.slice(i)}”.`; action = '✗'; end = actions.length; }
+      else {
+        action = rule.label; end = i + rule.label.length;
+        if (!canReduce(prev, rule)) error = `Cannot reduce ${rule.label}: the stack must end with ${rule.rhs.map(s => s.value).join(' ') || 'ε'}.`;
+        else { stack = stack.slice(0, stack.length - rule.rhs.length); stack.push({kind:'category',value:rule.lhs,text:rule.lhs}); }
+      }
+    }
+    transitions.push({action:error ? '✗' : action, start:i, end, error});
+    states.push({stack, offset, position:error ? actions.length : end, error});
+    if (error) break;
+    i = end;
+  }
+  return {states, transitions};
+}
+// UI: editing grammar or parser input replays, rather than clears, the actions.
+const $ = id => document.getElementById(id);
+const element = (tag,cls,text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text !== undefined) node.textContent = text; return node; };
+let game = null;
+function syncGrammarScroll() {
+  $('grammar-highlight').scrollTop = $('grammar').scrollTop;
+  $('grammar-highlight').scrollLeft = $('grammar').scrollLeft;
+}
+function renderGrammar(active) {
+  const fragment = document.createDocumentFragment(); let position = 0;
+  for (const rule of game.grammar?.rules || []) {
+    fragment.append(document.createTextNode(game.source.slice(position,rule.start)));
+    const span = element('span','grammar-rule' + (canReduce(active,rule) ? ' available' : ''));
+    span.append(element('span','rule-label',game.source.slice(rule.start,rule.labelEnd)),document.createTextNode(game.source.slice(rule.labelEnd,rule.end)));
+    fragment.append(span); position = rule.end;
+  }
+  fragment.append(document.createTextNode(game.source.slice(position)+'\n'));
+  $('grammar-highlight').replaceChildren(fragment); syncGrammarScroll();
+}
+function render() {
+  const current = replay(game.current,game), complete = replay(game.played,game);
+  const states = current.states.slice(), transitions = current.transitions.slice();
+  const activeIndex = states.length-1, active = states[activeIndex];
+  if (!active.error && game.played.startsWith(game.current) && complete.states[activeIndex]?.position === game.current.length) {
+    states.push(...complete.states.slice(activeIndex+1)); transitions.push(...complete.transitions.slice(activeIndex));
+  }
+  renderGrammar(active);
+  const fragment = document.createDocumentFragment();
+  $('initial-state').className = 'state-row' + (activeIndex === 0 ? ' current' : '');
+  $('initial-pointer').textContent = activeIndex === 0 ? '►' : '';
+  $('initial-action').textContent = transitions[0]?.action || '';
+  $('initial-action').className = 'action' + (transitions[0]?.error ? ' error-text' : '');
+  $('initial-action').title = transitions[0]?.error || '';
+  $('initial-action').style.opacity = activeIndex === 0 && transitions.length ? '.35' : '';
+  $('initial-state').setAttribute('aria-current',activeIndex === 0 ? 'step' : 'false');
+  // The editable first row stays mounted, preserving focus, cursor and selection.
+  $('parser-input').style.width = Math.max(12,[...game.input].length+1)+'ch';
+  states.slice(1).forEach((state,offset) => {
+    const index = offset+1;
+    const row = element('div','state-row' + (index === activeIndex ? ' current' : index > activeIndex ? ' future' : ''));
+    if (index === activeIndex) row.setAttribute('aria-current','step');
+    const content = element('div','state-content');
+    content.append(element('span','pointer',index === activeIndex ? '►' : ''));
+    if (state.error) { content.append(element('span','error-text','ERROR')); row.title = state.error; }
+    else {
+      const remaining = state.offset < game.tokens.length ? game.input.slice(game.tokens[state.offset].start) : '';
+      content.append(element('span','stack',state.stack.map(s => s.text).join(' ')),element('span','dot','·'),element('span','remaining',remaining));
+    }
+    const transition = transitions[index];
+    const action = element('span','action' + (transition?.error ? ' error-text' : ''),transition?.action || '');
+    if (transition?.error) action.title = transition.error;
+    if (index === activeIndex && index < transitions.length) action.style.opacity = '.35';
+    row.append(content,action); fragment.append(row);
+  });
+  $('history').replaceChildren(fragment);
+  const accepted = !active.error && active.offset === game.tokens.length && active.stack.length === 1 && active.stack[0].kind === 'category' && active.stack[0].value === game.grammar.start;
+  $('status').textContent = active.error ? active.error : accepted ? 'Accepted · parse complete' : `${active.offset} / ${game.tokens.length} shifted`;
+  $('status').className = 'status' + (accepted ? ' accepted' : '');
+  $('user-input').setAttribute('aria-invalid',String(!!active.error));
+  // Only follow the active trace while entering actions. Input edits stay visible.
+  if (document.activeElement === $('user-input')) {
+    const row = activeIndex ? $('history').children[activeIndex-1] : $('initial-state'), box = $('states');
+    const top = row.offsetTop-$('trace').offsetTop+12;
+    if (top < box.scrollTop) box.scrollTop = top;
+    else if (top+row.offsetHeight > box.scrollTop+box.clientHeight) box.scrollTop = top+row.offsetHeight-box.clientHeight;
+  }
+}
+function refreshModel() {
+  game.source = $('grammar').value; game.input = $('parser-input').value;
+  try { game.grammar = parseGrammar(game.source); game.grammarError = ''; game.tokens = tokenize(game.input,game.grammar); }
+  catch (error) { game.grammar = null; game.grammarError = error.message; game.tokens = []; }
+  $('grammar').setAttribute('aria-invalid',String(!!game.grammarError));
+  $('grammar-heading').className = game.grammarError ? 'error-text' : '';
+  $('url').value = ''; $('notice').textContent = ''; render();
+}
+$('grammar').addEventListener('input',refreshModel);
+$('grammar').addEventListener('scroll',syncGrammarScroll);
+$('grammar').addEventListener('blur',() => { renderGrammar(replay(game.current,game).states.at(-1)); });
+$('parser-input').addEventListener('input',refreshModel);
+$('user-input').addEventListener('input',() => {
+  const field = $('user-input'), value = field.value;
+  let expanded = '', selectionStart = field.selectionStart, selectionEnd = field.selectionEnd;
+  for (let i=0;i<value.length;i++) {
+    let replacement = value[i];
+    if (replacement === ' ' && game.grammar) {
+      const state = replay(expanded,game).states.at(-1);
+      const rule = game.grammar.rules.find(rule => canReduce(state,rule));
+      if (rule) replacement = rule.label;
+    }
+    expanded += replacement;
+    if (i < field.selectionStart) selectionStart += replacement.length-1;
+    if (i < field.selectionEnd) selectionEnd += replacement.length-1;
+  }
+  if (expanded !== value) { field.value = expanded; field.setSelectionRange(selectionStart,selectionEnd); }
+  game.current = field.value;
+  if (!game.played.startsWith(game.current)) game.played = game.current;
+  $('url').value = ''; $('notice').textContent = ''; render();
+});
+$('save').addEventListener('click',() => {
+  const url = new URL(location.href); url.search = ''; url.hash = '';
+  url.searchParams.set('grammar',game.source); url.searchParams.set('input',game.input);
+  url.searchParams.set('played',game.played); url.searchParams.set('user-input',game.current);
+  $('url').value = url.href; $('url').focus(); $('url').select();
+  $('notice').textContent = 'Link selected. Copy it to save or share this game.';
+});
+$('url').addEventListener('click',() => $('url').select());
+const params = new URLSearchParams(location.search);
+const actions = params.get('user-input') ?? params.get('userInput') ?? params.get('actions') ?? '';
+const played = params.get('played') ?? actions;
+$('grammar').value = params.get('grammar') ?? params.get('lbnf') ?? DEFAULT_GRAMMAR;
+$('parser-input').value = params.get('input') ?? DEFAULT_INPUT;
+$('user-input').value = actions;
+game = {current:actions,played:played.startsWith(actions) ? played : actions};
+refreshModel();
+$('user-input').focus(); $('user-input').setSelectionRange(actions.length,actions.length);
+</script>
+</body>
+</html>
