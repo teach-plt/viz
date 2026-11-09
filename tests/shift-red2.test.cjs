@@ -16,7 +16,7 @@ function load(search='') {
   document={activeElement:null,getElementById(id){if(!elements.has(id))elements.set(id,new Element());return elements.get(id)},createElement(){return new Element()},createTextNode(text){return Object.assign(new Element(),{textContent:text})},createDocumentFragment(){return Object.assign(new Element(),{fragment:true})}};
   const context=vm.createContext({document,URL,URLSearchParams,location:{search,href:'file:///test/shift-red2.html'+search}});
   vm.runInContext(script,context);
-  return {field:id=>elements.get(id),run:code=>vm.runInContext(code,context),edit(id,text){const field=elements.get(id);field.focus();field.value=text;field.selectionStart=field.selectionEnd=text.length;field.listeners.input();return field.value},available(){return elements.get('grammar-highlight').children.filter(c=>c.className==='grammar-rule available').map(c=>c.children[0].textContent)}};
+  return {field:id=>document.getElementById(id),run:code=>vm.runInContext(code,context),edit(id,text){const field=elements.get(id);field.focus();field.value=text;field.selectionStart=field.selectionEnd=text.length;field.listeners.input();return field.value},available(){return elements.get('grammar-highlight').children.filter(c=>c.className==='grammar-rule available').map(c=>c.children[0].textContent)}};
 }
 test('compact page defaults, action focus, available LBNF labels, and space shortcut',()=>{
   const page=load();assert.equal(page.field('grammar').value,page.run('DEFAULT_GRAMMAR'));assert.equal(page.field('parser-input').value,page.run('DEFAULT_INPUT'));
@@ -80,5 +80,24 @@ test('column splitter handles pointer dragging, keyboard resizing, and minimum w
   divider.listeners.pointermove({clientX:200});assert.equal(divider.attributes['aria-valuenow'],'83');
   const key=key=>divider.listeners.keydown({key,preventDefault(){}});
   key('Home');assert.equal(divider.attributes['aria-valuenow'],'12');key('ArrowRight');assert.equal(divider.attributes['aria-valuenow'],'14');key('ArrowLeft');assert.equal(divider.attributes['aria-valuenow'],'12');key('End');assert.equal(divider.attributes['aria-valuenow'],'83');
+  assert.equal(page.run('game.current'),'.xa');assert.equal(page.run('game.played'),'.xa');
+});
+test('action splitter supports dragging, keyboard input, and responsive proportions',()=>{
+  const page=load(),history=page.field('history-panel'),states=page.field('states'),divider=page.field('action-divider');
+  states.clientWidth=600;history.getBoundingClientRect=()=>({left:400,width:states.clientWidth});
+  history.style.setProperty=(name,value)=>{history.style[name]=value};
+  const classes=new Set();history.classList={add:name=>classes.add(name),remove:name=>classes.delete(name)};
+  divider.setPointerCapture=()=>{};
+  page.run("globalThis.getComputedStyle = el => ({getPropertyValue:name => el.style[name] || (name === '--action-width' ? '86px' : '38%')});refreshActionSplit();");
+  const width=()=>parseFloat(history.style['--action-width']);assert.ok(Math.abs(width()-86)<1e-9);
+  page.edit('user-input','.xa');
+  divider.listeners.pointerdown({button:0,pointerId:1,preventDefault(){}});
+  divider.listeners.pointermove({clientX:790});divider.listeners.pointerup();
+  assert.equal(divider.attributes['aria-valuenow'],'65');assert.ok(Math.abs(width()-210)<1e-9);assert.ok(!classes.has('resizing'));
+  states.clientWidth=900;page.run('refreshActionSplit()');assert.ok(Math.abs(width()-315)<1e-9);
+  divider.listeners.keydown({key:'ArrowRight',preventDefault(){}});assert.ok(Math.abs(width()-297)<1e-9);
+  divider.listeners.keydown({key:'End',preventDefault(){}});assert.ok(Math.abs(width()-54)<1e-9);
+  states.clientWidth=150;page.run('refreshActionSplit()');assert.ok(width()>=37.5-1e-9);assert.ok(states.clientWidth-width()>=82.5-1e-9);
+  states.clientWidth=900;page.run('refreshActionSplit()');assert.ok(Math.abs(width()-54)<1e-9);
   assert.equal(page.run('game.current'),'.xa');assert.equal(page.run('game.played'),'.xa');
 });
