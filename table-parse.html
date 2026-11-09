@@ -14,7 +14,7 @@
 
 .action-divider{position:absolute;z-index:5;top:0;bottom:0;right:calc(var(--action-width) + var(--scrollbar-width) - 5px);width:9px;cursor:col-resize;touch-action:none;outline:none}.action-divider:hover::after,.action-divider:focus-visible::after,.history-panel.resizing .action-divider::after{content:"";position:absolute;top:0;bottom:0;left:3px;width:3px;background:var(--red)}
 
-.game{--history-share:60%}.panels{flex:0 0 var(--history-share)}.table-area{position:relative;display:flex;flex-direction:column;flex:1;min-height:0;border-top:1px solid var(--line)}.table-divider{position:absolute;left:0;right:0;top:-5px;height:9px;z-index:6;cursor:row-resize;touch-action:none;outline:0}.table-divider:hover::after,.table-divider:focus-visible::after,.game.table-resizing .table-divider::after{content:"";position:absolute;left:0;right:0;top:3px;height:3px;background:var(--red)}.game.table-resizing,.game.table-resizing *{cursor:row-resize!important;user-select:none}.table-scroll{flex:1;min-height:0;overflow:auto;scrollbar-width:thin;outline:0}.table-scroll:focus-visible{box-shadow:inset 0 0 0 2px #b9383860}table{border-collapse:separate;border-spacing:0;width:100%;font:13px/1.5 var(--mono);text-align:center}th,td{padding:5px 9px;border-right:1px solid #efede7;border-bottom:1px solid #efede7;white-space:nowrap}th{background:#f5f3ee;color:var(--muted);font-size:11px;font-weight:600;position:sticky;top:0;z-index:1}th:last-child,td:last-child{border-right:0}tr:last-child td{border-bottom:0}td:first-child{font-weight:bold;background:#fdfcf9}.state-conflict{color:var(--red)}.conflict{color:var(--red)}.shift-cell{background:#fdfcf9}.table-pointer{display:inline-block;width:18px;color:var(--red);font-size:12px}.table-action{display:inline-block;border:0;border-radius:3px;min-height:0;padding:0 5px;font:inherit;letter-spacing:normal;background:transparent;cursor:default}.table-action.available{background:var(--wash);cursor:pointer;color:var(--red)}td.available{background:var(--wash)}.table-action.selected{outline:2px solid var(--red);outline-offset:1px}.table-action.available:hover{background:#f6d9d3}.stack sup{color:var(--red);font-size:11px;line-height:0;padding:0 3px}.state-row{cursor:pointer}.state-row:focus-visible{outline:2px solid var(--red);outline-offset:-2px}.state-row.accepted .pointer{color:#29744e}
+.game{--history-share:40%}.panels{flex:0 0 var(--history-share)}.table-area{position:relative;display:flex;flex-direction:column;flex:1;min-height:0;border-top:1px solid var(--line)}.table-divider{position:absolute;left:0;right:0;top:-5px;height:9px;z-index:6;cursor:row-resize;touch-action:none;outline:0}.table-divider:hover::after,.table-divider:focus-visible::after,.game.table-resizing .table-divider::after{content:"";position:absolute;left:0;right:0;top:3px;height:3px;background:var(--red)}.game.table-resizing,.game.table-resizing *{cursor:row-resize!important;user-select:none}.table-scroll{flex:1;min-height:0;overflow:auto;scrollbar-width:thin;outline:0}.table-scroll:focus-visible{box-shadow:inset 0 0 0 2px #b9383860}table{border-collapse:separate;border-spacing:0;width:100%;font:13px/1.5 var(--mono);text-align:center}th,td{padding:5px 9px;border-right:1px solid #efede7;border-bottom:1px solid #efede7;white-space:nowrap}th{background:#f5f3ee;color:var(--muted);font-size:11px;font-weight:600;position:sticky;top:0;z-index:1}th:last-child,td:last-child{border-right:0}tr:last-child td{border-bottom:0}td:first-child{font-weight:bold;background:#fdfcf9}.state-conflict{color:var(--red)}.conflict{color:var(--red)}.shift-cell{background:#fdfcf9}.table-pointer{display:inline-block;width:18px;color:var(--red);font-size:12px}.table-action{display:inline-block;border:0;border-radius:3px;min-height:0;padding:0 5px;font:inherit;letter-spacing:normal;background:transparent;cursor:default}.table-action.available{background:var(--wash);cursor:pointer;color:var(--red)}td.available{background:var(--wash)}.table-action.selected{outline:2px solid var(--red);outline-offset:1px}.table-action.available:hover{background:#f6d9d3}.stack sup{color:var(--red);font-size:11px;line-height:0;padding:0 3px}.state-row{cursor:pointer}.state-row:focus-visible{outline:2px solid var(--red);outline-offset:-2px}.state-row.accepted .pointer,.action.accept-action{color:#29744e}
 </style>
 </head>
 <body>
@@ -39,7 +39,7 @@
     <div class="panel-divider" id="panel-divider" role="separator" tabindex="0" aria-label="Resize grammar and parser columns" aria-orientation="vertical" aria-controls="grammar-panel history-panel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="38" title="Drag to resize columns, or use Left and Right arrow keys."></div>
   </div>
   <section class="table-area" id="table-area" aria-label="Parse table">
-    <div id="table-divider" class="table-divider" role="separator" tabindex="0" aria-label="Resize history and parse table" aria-orientation="horizontal" aria-valuemin="20" aria-valuemax="80" aria-valuenow="60" title="Drag to resize, or use Up and Down arrow keys."></div>
+    <div id="table-divider" class="table-divider" role="separator" tabindex="0" aria-label="Resize history and parse table" aria-orientation="horizontal" aria-valuemin="20" aria-valuemax="98" aria-valuenow="40" title="Drag to resize, or use Up and Down arrow keys."></div>
     <div class="table-scroll" id="table-scroll" tabindex="0" aria-label="Parser actions"><table id="parse-table" aria-label="LR(0) parse table"></table></div>
   </section>
 </section>
@@ -180,11 +180,10 @@ function buildTable(grammar) {
 function accepted(state,model) {
   const finalStack=!state.error && state.offset===model.tokens.length && state.stack.length===1 && state.stack[0].kind==='category' && state.stack[0].value===model.grammar?.start;
   if(!finalStack)return false;
-  // Finish a pending goto when one exists, even for an entrypoint reduction.
-  return state.numbers.length>state.stack.length || !model.table?.states[state.numbers.at(-1)].transitions.has(symbolKey(state.stack[0]));
+  return !availableActions(state,model).some(action=>action.type==='reduce'||action.type==='goto');
 }
 function availableActions(state,model) {
-  if (!model.table || state.error || accepted(state,model)) return [];
+  if (!model.table || state.error) return [];
   const top=model.table.states[state.numbers.at(-1)], actions=[];
   if(state.numbers.length===state.stack.length) {
     const symbol=state.stack.at(-1), target=top.transitions.get(symbolKey(symbol));
@@ -223,14 +222,14 @@ function replay(actions,model) {
   }
   for (const id of actions) {
     const next=stepParser(states.at(-1),id,model);
-    transitions.push({text:next.error ? '✗' : id==='.' ? 'shift' : id.startsWith('g:') ? 'goto '+id.slice(2) : id.slice(2),error:next.error}); states.push(next);
+    transitions.push({text:next.error ? '✗' : id==='.' ? 'shift' : id.startsWith('g:') ? 'goto '+id.slice(2) : 'red '+id.slice(2),error:next.error}); states.push(next);
     if (next.error) break;
   }
   return {states,transitions};
 }
 const $=id=>document.getElementById(id);
 const element=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node;};
-let game=null, activeTraceIndex=0, selectedAction=0, selectedTableAction=null;
+let game=null, activeTraceIndex=0, selectedAction=0, selectedTableAction=null, preferredTableShare=.6;
 function activeState() { return replay(game.played.slice(0,game.cursor),game).states.at(-1); }
 function syncGrammarScroll() {
   $('grammar-highlight').scrollTop=$('grammar').scrollTop;
@@ -313,7 +312,7 @@ function renderTable(active) {
     }body.append(row);
   }
   $('parse-table').replaceChildren(head,body);
-  followTableAction();
+  fitTableHeight();followTableAction();
 }
 function render() {
   const current=replay(game.played.slice(0,game.cursor),game), complete=replay(game.played,game);
@@ -340,7 +339,8 @@ function render() {
       content.append(stackNode(state),element('span','dot','·'),element('span','remaining',remaining));
       if(accepted(state,game))row.title='Parsing finished successfully';
     }
-    const transition=transitions[index],action=element('span','action'+(transition?.error?' error-text':''),transition?.text||'');
+    const transition=transitions[index], done=accepted(state,game);
+    const action=element('span','action'+(transition?.error?' error-text':'')+(!transition&&done?' accept-action':''),transition?.text||(done?'accept':''));
     if(transition?.error)action.title=transition.error;
     if(isActive&&transition)action.style.opacity='.35';
     row.append(content,action);fragment.append(row);
@@ -436,18 +436,28 @@ function refreshActionSplit() {
   setActionSplit(actionShare === null ? (width-defaultWidth)/width*100 : (1-actionShare)*100,false);
 }
 function measurePanels() {
+  fitTableHeight();
   historyPanel.style.setProperty('--scrollbar-width',($('states').offsetWidth-$('states').clientWidth)+'px');
   setSplit(parseFloat(getComputedStyle(panels).getPropertyValue('--grammar-width')));
   refreshActionSplit(); syncGrammarScroll(); followActiveRow();
 }
 if (typeof ResizeObserver === 'function') {
-  const observer = new ResizeObserver(measurePanels); observer.observe(panels); observer.observe($('states'));
+  const observer = new ResizeObserver(measurePanels); observer.observe(panels); observer.observe($('states')); observer.observe($('game')); observer.observe($('parse-table'));
 }
-// The horizontal divider changes the vertical ratio, preserving the page width.
+// Content limits the table height; the preferred ratio survives window resizing.
 const tableDivider=$('table-divider');let tableDragging=false;
+function fitTableHeight() {
+  const height=$('game').clientHeight;if(!height)return;
+  const scroll=$('table-scroll'), table=$('parse-table');
+  const natural=table.offsetHeight+Math.max(0,scroll.offsetHeight-scroll.clientHeight)+1;
+  const tableHeight=Math.min(natural,height*preferredTableShare);
+  const historyShare=(height-tableHeight)/height*100;
+  $('game').style.setProperty('--history-share',historyShare+'%');
+  tableDivider.setAttribute('aria-valuenow',String(Math.round(historyShare)));
+}
 function setTableSplit(value) {
-  value=Math.max(20,Math.min(80,value));$('game').style.setProperty('--history-share',value+'%');
-  tableDivider.setAttribute('aria-valuenow',String(Math.round(value)));
+  preferredTableShare=(100-Math.max(20,Math.min(98,value)))/100;
+  fitTableHeight();
 }
 tableDivider.addEventListener('pointerdown',event=>{
   if(event.button!==0)return;event.preventDefault();tableDragging=true;tableDivider.focus();tableDivider.setPointerCapture(event.pointerId);$('game').classList.add('table-resizing');
@@ -459,7 +469,7 @@ for(const name of ['pointerup','pointercancel','lostpointercapture'])tableDivide
 tableDivider.addEventListener('keydown',event=>{
   if(!['ArrowUp','ArrowDown','Home','End'].includes(event.key))return;event.preventDefault();
   const value=parseFloat(getComputedStyle($('game')).getPropertyValue('--history-share'));
-  setTableSplit(event.key==='Home'?20:event.key==='End'?80:value+(event.key==='ArrowUp'?-2:2));
+  setTableSplit(event.key==='Home'?20:event.key==='End'?98:value+(event.key==='ArrowUp'?-2:2));
 });
 $('parser-input').addEventListener('focus',()=>{$('states').scrollTop=0;});
 $('grammar').addEventListener('input',refreshModel);

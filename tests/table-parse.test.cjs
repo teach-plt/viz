@@ -102,12 +102,13 @@ test('grammar and input edits replay saved actions into errors and recover; whit
 });
 test('horizontal divider supports pointer and keyboard resizing with bounded percentages',()=>{
  const p=load(),game=p.field('game'),divider=p.field('table-divider');
+ game.clientHeight=500;p.field('parse-table').offsetHeight=600;
  game.getBoundingClientRect=()=>({top:100,height:500});game.classList={add(){},remove(){}};divider.setPointerCapture=()=>{};
  p.run('globalThis.getComputedStyle = el => ({getPropertyValue:name=>el.style[name]||"60%"})');
  divider.listeners.pointerdown({button:0,pointerId:1,preventDefault(){}});
  divider.listeners.pointermove({clientY:350});assert.equal(game.style['--history-share'],'50%');divider.listeners.pointerup();
  divider.listeners.keydown({key:'ArrowUp',preventDefault(){}});assert.equal(game.style['--history-share'],'48%');
- divider.listeners.keydown({key:'End',preventDefault(){}});assert.equal(game.style['--history-share'],'80%');
+ divider.listeners.keydown({key:'End',preventDefault(){}});assert.equal(game.style['--history-share'],'98%');
 });
 test('every transition is the full advanced kernel and completed items become reductions',()=>{
  const p=load();
@@ -198,4 +199,34 @@ test('table values keep identical element types and text as focus and parser act
  key(p,'Enter');assert.deepEqual(layoutContent(),before);
  key(p,'Enter');assert.deepEqual(layoutContent(),before);
  key(p,'ArrowRight');assert.deepEqual(layoutContent(),before);
+});
+test('history labels reductions and shows green accept only when no reduce or goto remains',()=>{
+ const p=setup('s. S ::= "x";','x');finish(p);
+ const rows=p.field('history').children;
+ assert.equal(rows[0].children[1].textContent,'red s');
+ assert.equal(rows.at(-1).children[1].textContent,'accept');
+ assert.match(rows.at(-1).children[1].className,/accept-action/);
+ key(p,'ArrowUp');assert.ok(!p.field('history').children.find(row=>row.className.includes('current')).children[1].className.includes('accept-action'));
+ const q=setup('s. S ::= S;\nx. S ::= "x";','x');
+ key(q,'Enter');key(q,'Enter');
+ assert.equal(q.run('availableActions(activeState(),game)[0].type'),'goto');
+ assert.equal(q.run('accepted(activeState(),game)'),false);
+ key(q,'Enter');
+ assert.equal(q.run('availableActions(activeState(),game)[0].type'),'reduce');
+ assert.equal(q.run('accepted(activeState(),game)'),false);
+ assert.ok(!q.field('history').children.at(-1).children[1].className.includes('accept-action'));
+});
+test('table initially fits its contents up to 60%, and window resizing caps unused space',()=>{
+ const p=load(),game=p.field('game'),table=p.field('parse-table'),scroll=p.field('table-scroll');
+ game.clientHeight=1000;table.offsetHeight=399;scroll.offsetHeight=scroll.clientHeight=400;
+ p.run('fitTableHeight()');assert.equal(game.style['--history-share'],'60%');
+ // Larger windows give the extra space to grammar and history, keeping all table rows visible.
+ game.clientHeight=2000;p.run('fitTableHeight()');assert.equal(game.style['--history-share'],'80%');
+ // Smaller windows cap the initial table at 60% and allow scrolling.
+ game.clientHeight=500;p.run('fitTableHeight()');assert.equal(game.style['--history-share'],'40%');
+ p.run('setTableSplit(70)');assert.equal(game.style['--history-share'],'70%');
+ game.clientHeight=1000;p.run('fitTableHeight()');assert.equal(game.style['--history-share'],'70%');
+ game.clientHeight=2000;p.run('fitTableHeight()');assert.equal(game.style['--history-share'],'80%');
+ // Include horizontal scrollbar thickness when fitting the table.
+ scroll.offsetHeight=415;p.run('fitTableHeight()');assert.equal(game.style['--history-share'],'79.25%');
 });
