@@ -28,6 +28,44 @@ const LRLayout = (() => {
       })))
     };
   }
+  function routeRootFanout(nodes,edges,rootKey,direction) {
+    // Moving the root into the corner can reverse the order of its departure
+    // lanes. Route its fan-out as a group in the empty strip before layer two.
+    // Order departure ports by destination. Down/right-going bends take lanes
+    // in reverse order; up/left-going bends take them in forward order.
+    const primary = direction === 'RIGHT' ? 'x' : 'y';
+    const secondary = primary === 'x' ? 'y' : 'x';
+    const extent = primary === 'x' ? 'width' : 'height';
+    const crossExtent = extent === 'width' ? 'height' : 'width';
+    const root = nodes.get(rootKey), boundary = root[primary]+root[extent]/2;
+    let limit = Infinity;
+    for (const [key,node] of nodes) {
+      if (key === rootKey || node[primary]+node[extent]/2 <= boundary) continue;
+      limit = Math.min(limit,node[primary]-node[extent]/2);
+    }
+    const outgoing = [...edges.values()].filter(route => route.from === rootKey);
+    if (outgoing.length < 2 || limit-boundary < 20) return;
+    const fanout = [];
+    for (const route of outgoing) {
+      const points = route.points;
+      if (Math.abs(points[0][primary]-boundary) > .1) return;
+      const exit = points.findIndex(p => p[primary] >= limit-.1);
+      if (exit < 1 || Math.abs(points[exit][secondary]-points[exit-1][secondary]) > .1) return;
+      fanout.push({route,exit,arrival:points[exit][secondary]});
+    }
+    fanout.sort((a,b) => a.arrival-b.arrival || a.route.points[0][secondary]-b.route.points[0][secondary]);
+    const margin = 8, gap = (limit-boundary-2*margin)/(fanout.length-1);
+    const leading = root[secondary]-root[crossExtent]/2;
+    fanout.forEach((entry,index) => { entry.port = leading+root[crossExtent]*(index+1)/(fanout.length+1); });
+    const inward = fanout.filter(entry => entry.arrival < entry.port);
+    const outward = fanout.filter(entry => entry.arrival >= entry.port).reverse();
+    [...inward,...outward].forEach((entry,index) => { entry.lane = boundary+margin+index*gap; });
+    fanout.forEach(({route,exit,arrival,port,lane}) => {
+      const point = (a,b) => ({[primary]:a,[secondary]:b});
+      const points = [point(boundary,port),point(lane,port),point(lane,arrival),...route.points.slice(exit)];
+      route.points = points.filter((p,i) => !i || p.x !== points[i-1].x || p.y !== points[i-1].y);
+    });
+  }
   function decode(core,model,graph,config) {
     const nodes = new Map(graph.children.map(node => {
       const state = model.states[Number(node.id.slice(1))];
@@ -77,6 +115,7 @@ const LRLayout = (() => {
           route.labelPosition = {x:end.x+route.labelWidth/2+8,y:end.y-Math.sign(end.y-previous.y)*(route.labelHeight/2+8)};
         route.points = points;
       }
+      routeRootFanout(nodes,edges,rootKey,config.direction);
     }
     return {nodes,edges,bounds:{x:0,y:0,width:graph.width,height:graph.height},config};
   }

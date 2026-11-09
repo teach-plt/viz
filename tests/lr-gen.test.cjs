@@ -231,3 +231,32 @@ test('manual offsets affect incident routes only, and planning is cancellable',a
   }
   assert.equal(await Layout.plan(L,model,ELK,{width:950,height:440},()=>true),null);
 });
+test('initial Integer, T, and E wires never cross, regardless of confirmation order',async () => {
+  function intersects(a,b,c,d) {
+    const within=(v,x,y)=>v>=Math.min(x,y)-1e-7&&v<=Math.max(x,y)+1e-7;
+    if(a.x===b.x && c.y===d.y)return within(a.x,c.x,d.x)&&within(c.y,a.y,b.y);
+    if(a.y===b.y && c.x===d.x)return within(c.x,a.x,b.x)&&within(a.y,c.y,d.y);
+    if(a.x===b.x && c.x===d.x && a.x===c.x)return Math.max(Math.min(a.y,b.y),Math.min(c.y,d.y))<Math.min(Math.max(a.y,b.y),Math.max(c.y,d.y))-1e-7;
+    if(a.y===b.y && c.y===d.y && a.y===c.y)return Math.max(Math.min(a.x,b.x),Math.min(c.x,d.x))<Math.min(Math.max(a.x,b.x),Math.max(c.x,d.x))-1e-7;
+    return false;
+  }
+  const grammar=L.parseGrammar(L.DEFAULT_GRAMMAR),model=await L.canonical(grammar);
+  const permutations=[['shift Integer','goto T','goto E'],['shift Integer','goto E','goto T'],['goto T','shift Integer','goto E'],['goto T','goto E','shift Integer'],['goto E','shift Integer','goto T'],['goto E','goto T','shift Integer']];
+  for(const width of [320,500,768,900,1200]) {
+    const plan=await Layout.plan(L,model,ELK,{width,height:440});
+    for(const order of permutations) {
+      const played=L.replay(grammar,['0 expand E','0 expand T',...order.map(action=>'0 '+action)]);
+      const routes=[...played.states[0].transitions.values()].map(t=>plan.edges.get(Layout.edgeKey('0:0',t.symbol.key,played.states[t.to].key)));
+      for(let i=0;i<routes.length;i++)for(let j=i+1;j<routes.length;j++)
+        for(let a=1;a<routes[i].points.length;a++)for(let b=1;b<routes[j].points.length;b++)
+          assert.ok(!intersects(routes[i].points[a-1],routes[i].points[a],routes[j].points[b-1],routes[j].points[b]),`${width}px: ${routes[i].label} and ${routes[j].label} must not cross or share a wire`);
+    }
+    // Fan-out correction changes routes only: every non-root rectangle keeps
+    // the exact position and dimensions returned by the selected ELK layout.
+    const raw=await new ELK().layout(Layout.inputGraph(L,model,plan.config,width,440));
+    for(const node of raw.children) {
+      if(node.id==='n0')continue;
+      assert.deepEqual(plan.nodes.get(model.states[Number(node.id.slice(1))].key),{x:node.x+node.width/2,y:node.y+node.height/2,width:node.width,height:node.height});
+    }
+  }
+});
