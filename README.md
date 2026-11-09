@@ -4,7 +4,8 @@
 
 [shift-red2](shift-red2.html): A compact variant with the LBNF editor directly
 beside the parsing history. Edit parser input in the first Stack · Input row.
-Available reductions are highlighted when the grammar editor loses focus.
+Available reductions get the active state's red-tinted background when the
+grammar editor loses focus; all grammar text retains its normal color.
 Edits replay the existing actions; incompatible actions show ERROR. SAVE
 preserves the grammar, input, actions, and undo history as a URL.
 
