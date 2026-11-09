@@ -322,7 +322,9 @@ function renderTable() {
     for (const [r,born] of state.reductions) {
       if (!first) cell.append(document.createTextNode(', ')); first = false;
       const reduction = make('span',born > cursor ? 'ghost' : '',grammar.rules[r].label);
-      reduction.dataset.tooltip = r === 0 ? 'Parsing finished successfully' : 'Parser reduces with given rule';
+      if (r === 0) {
+        reduction.dataset.tooltip = 'Parsing finished successfully';
+      }
       cell.append(reduction);
     }
     const problem = active && LR0.conflict(current,active);
