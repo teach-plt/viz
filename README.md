@@ -8,6 +8,8 @@ When the grammar editor loses focus, available reductions appear in bold red
 and unavailable rules are half-greyed out.
 Edits replay the existing actions; incompatible actions show ERROR. SAVE
 preserves the grammar, input, actions, and undo history as a URL.
+Resize the playing area using its lower-right corner. Drag the vertical divider
+to change the grammar/parser width ratio, or focus it and use Left/Right arrows.
 
 [lr-gen](lr-gen.html): Build an LR(0) automaton and its parse table interactively.
 

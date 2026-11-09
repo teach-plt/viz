@@ -63,3 +63,22 @@ test('SAVE round-trips inline edits, actions, undone future, and invalid grammar
   const restored=load(url.search);assert.equal(restored.run('game.played'),'.xa..');assert.equal(restored.run('game.current'),'.xa');assert.equal(restored.field('history').children.filter(c=>c.className.includes('future')).length,2);
   page.edit('grammar','bad grammar');page.field('save').listeners.click();const invalid=load(new URL(page.field('url').value).search);assert.match(invalid.field('history').textContent,/ERROR/);assert.equal(invalid.run('game.current'),'.xa');
 });
+test('column splitter handles pointer dragging, keyboard resizing, and minimum widths',()=>{
+  const page=load(),panels=page.field('panels'),divider=page.field('panel-divider');
+  panels.getBoundingClientRect=()=>({left:100,width:1000});
+  panels.style.setProperty=(name,value)=>{panels.style[name]=value};
+  const classes=new Set();panels.classList={add:name=>classes.add(name),remove:name=>classes.delete(name)};
+  let capture;divider.setPointerCapture=id=>{capture=id};
+  page.run("globalThis.getComputedStyle = el => ({getPropertyValue:name => el.style[name] || '38%'});");
+  page.edit('user-input','.xa');
+  let prevented=false;
+  divider.listeners.pointerdown({button:0,pointerId:7,preventDefault(){prevented=true}});
+  assert.ok(prevented);assert.equal(capture,7);assert.ok(classes.has('resizing'));assert.equal(page.run('document.activeElement'),divider);
+  divider.listeners.pointermove({clientX:650});assert.ok(Math.abs(parseFloat(panels.style['--grammar-width'])-55)<1e-9);
+  divider.listeners.pointermove({clientX:2000});assert.equal(divider.attributes['aria-valuenow'],'83');
+  divider.listeners.pointerup();assert.ok(!classes.has('resizing'));
+  divider.listeners.pointermove({clientX:200});assert.equal(divider.attributes['aria-valuenow'],'83');
+  const key=key=>divider.listeners.keydown({key,preventDefault(){}});
+  key('Home');assert.equal(divider.attributes['aria-valuenow'],'12');key('ArrowRight');assert.equal(divider.attributes['aria-valuenow'],'14');key('ArrowLeft');assert.equal(divider.attributes['aria-valuenow'],'12');key('End');assert.equal(divider.attributes['aria-valuenow'],'83');
+  assert.equal(page.run('game.current'),'.xa');assert.equal(page.run('game.played'),'.xa');
+});
