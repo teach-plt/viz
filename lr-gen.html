@@ -7,28 +7,30 @@
 <title>lr-gen · LR(0) automaton generation</title>
 <style>
 :root{color-scheme:light;--paper:#faf8f4;--ink:#292b32;--muted:#77766f;--line:#e3dfd7;--red:#b93838;--wash:#fcf0ed;--green:#29744e;--mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace}
-*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:1480px;margin:auto;padding:34px 28px 24px}header{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:24px}h1{font-size:36px;letter-spacing:-1.6px;line-height:1;margin:0;font-weight:750}h1 span{color:var(--red)}.badge{border:1px solid var(--line);border-radius:30px;padding:8px 14px;font-size:12px}a{color:var(--muted)}button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:white;color:var(--ink);font-size:11px;font-weight:650;letter-spacing:.6px}button:hover{background:#efede7}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--red);outline-offset:2px}.board{display:grid;grid-template-columns:260px minmax(0,1fr);border:1px solid var(--line);border-radius:18px;background:white;overflow:hidden;box-shadow:0 8px 30px #292b3205}.steps-panel{border-right:1px solid var(--line);min-width:0}.panel-head{height:47px;background:#f5f3ee;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 17px}.heading,label{font-size:10px;letter-spacing:1.5px;font-weight:700;color:var(--muted)}.count{font:11px var(--mono);color:var(--muted)}#step-list{height:440px;overflow:auto;padding:10px 0;scrollbar-width:thin}.step-row{position:relative;display:flex;align-items:center;min-height:34px;padding:4px 14px;gap:8px;font:13px/26px var(--mono);white-space:pre;cursor:pointer}.step-row:hover{background:#faf8f4}.step-row.future{color:#bbb7b0}.step-row.current{background:var(--wash);cursor:text}.marker{width:13px;flex-shrink:0;color:var(--red);font-size:10px}.step-code{white-space:pre}.editor{position:relative;min-width:0;flex:1;height:26px;overflow:hidden}.completion{position:absolute;inset:0;pointer-events:none;color:#b9b4ad;font:13px/26px var(--mono);white-space:pre}.completion .typed{visibility:hidden}#step-input{position:relative;display:block;width:100%;height:26px;padding:0;border:0;outline:0;background:transparent;color:var(--ink);font:13px/26px var(--mono);box-shadow:none;border-radius:0}#step-input.invalid{color:var(--red)}#step-input.completed{color:var(--green);-webkit-text-fill-color:var(--green);opacity:1;font-weight:bold}.graph-panel{min-width:0}.graph-actions{display:flex;align-items:center;gap:8px}.graph-actions button{padding:4px 9px;font-size:10px}#graph{height:440px;position:relative;background:radial-gradient(#e8e3db .7px,transparent .7px);background-size:18px 18px}.explanation{min-height:53px;border-top:1px solid var(--line);padding:15px 19px;grid-column:1/-1;color:var(--muted);font-size:13px}.explanation.suggested{color:#aaa59d}.explanation.error{color:var(--red)}.key-help{display:flex;gap:20px;flex-wrap:wrap;color:var(--muted);font-size:11px;margin:12px 3px 24px}kbd{font:11px var(--mono);border:1px solid var(--line);border-radius:4px;padding:1px 4px;background:white;color:var(--ink)}.lower{display:grid;grid-template-columns:minmax(270px,36%) minmax(0,1fr);gap:24px}.grammar-panel,.table-panel{min-width:0}.section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.section-title h2{margin:0;font-size:10px;letter-spacing:1.5px;color:var(--muted)}#accept-rule{padding:11px 14px;border:1px solid var(--line);border-radius:10px 10px 0 0;background:#f5f3ee;font:13px/1.6 var(--mono);overflow:auto;white-space:pre}#grammar{width:100%;display:block;min-height:208px;resize:vertical;border:1px solid var(--line);border-top:0;border-radius:0 0 10px 10px;padding:12px 14px;font:13px/1.7 var(--mono);color:var(--ink);background:white;tab-size:2}.table-scroll{overflow:auto;max-height:285px;border:1px solid var(--line);border-radius:10px;background:white}table{border-collapse:separate;border-spacing:0;width:100%;font:13px/1.5 var(--mono);text-align:center}th,td{padding:9px 13px;border-right:1px solid #efede7;border-bottom:1px solid #efede7;white-space:nowrap}th{background:#f5f3ee;color:var(--muted);font-size:11px;font-weight:600;position:sticky;top:0;z-index:1}th:last-child,td:last-child{border-right:0}tr:last-child td{border-bottom:0}thead tr:nth-child(2) th{top:35px}td:first-child{font-weight:bold;background:#fdfcf9}.ghost{color:#bcb7b0}.conflict{color:var(--red);background:#fcf0ed}.conflict-note{font-size:11px;color:var(--red)}.bottom{display:flex;align-items:center;gap:10px;margin-top:24px}#url{min-width:0;flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:white;font:12px var(--mono);color:var(--ink)}#notice{min-height:22px;margin:10px 0;color:var(--red);font-size:12px;white-space:pre-wrap}footer{display:flex;justify-content:space-between;gap:15px;border-top:1px solid var(--line);padding-top:14px;margin-top:10px;color:var(--muted);font-size:11px}.legend{font-size:11px;color:var(--muted)}.legend b{font-weight:600}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-@media(max-width:800px){main{padding:24px 14px}.board{grid-template-columns:220px minmax(0,1fr)}.lower{grid-template-columns:1fr}.badge{display:none}#graph,#step-list{height:390px}.key-help{gap:10px 15px}footer{flex-wrap:wrap}}@media(max-width:520px){.board{grid-template-columns:1fr}.steps-panel{border-right:0;border-bottom:1px solid var(--line)}#step-list{height:180px}#graph{height:350px}.bottom{flex-wrap:wrap}#url{flex-basis:100%}.legend{display:none}}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:1480px;margin:auto;padding:34px 28px 24px}header{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:24px}h1{font-size:36px;letter-spacing:-1.6px;line-height:1;margin:0;font-weight:750}h1 span{color:var(--red)}.badge{border:1px solid var(--line);border-radius:30px;padding:8px 14px;font-size:12px}a{color:var(--muted)}button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:white;color:var(--ink);font-size:11px;font-weight:650;letter-spacing:.6px}button:hover{background:#efede7}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--red);outline-offset:2px}.board{display:grid;grid-template-columns:260px minmax(0,1fr);border:1px solid var(--line);border-radius:18px;background:white;overflow:hidden;box-shadow:0 8px 30px #292b3205}.steps-panel{border-right:1px solid var(--line);min-width:0}.panel-head{height:47px;background:#f5f3ee;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 17px}.heading,label{font-size:10px;letter-spacing:1.5px;font-weight:700;color:var(--muted)}.count{font:11px var(--mono);color:var(--muted)}#step-list{height:440px;overflow:auto;padding:10px 0;scrollbar-width:thin}.step-row{position:relative;display:flex;align-items:center;min-height:34px;padding:4px 14px;gap:8px;font:13px/26px var(--mono);white-space:pre;cursor:pointer}.step-row:hover{background:#faf8f4}.step-row.future{color:#bbb7b0}.step-row.current{background:var(--wash);cursor:text}.marker{width:13px;flex-shrink:0;color:var(--red);font-size:10px}.step-code{white-space:pre}.editor{position:relative;min-width:0;flex:1;height:26px;overflow:hidden}.completion{position:absolute;inset:0;pointer-events:none;color:#b9b4ad;font:13px/26px var(--mono);white-space:pre}.completion .typed{visibility:hidden}#step-input{position:relative;display:block;width:100%;height:26px;padding:0;border:0;outline:0;background:transparent;color:var(--ink);font:13px/26px var(--mono);box-shadow:none;border-radius:0}#step-input.invalid{color:var(--red)}#step-input.completed{color:var(--green);-webkit-text-fill-color:var(--green);opacity:1;font-weight:bold}.graph-panel{min-width:0}.graph-actions{display:flex;align-items:center;gap:8px}.graph-actions button{padding:4px 9px;font-size:10px}#graph{height:440px;position:relative;background:radial-gradient(#e8e3db .7px,transparent .7px);background-size:18px 18px}.lower{margin-top:22px;display:grid;grid-template-columns:minmax(270px,36%) minmax(0,1fr);gap:24px}.grammar-panel,.table-panel{min-width:0}.section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.section-title h2{margin:0;font-size:10px;letter-spacing:1.5px;color:var(--muted)}#accept-rule{padding:11px 14px;border:1px solid var(--line);border-radius:10px 10px 0 0;background:#f5f3ee;font:13px/1.6 var(--mono);overflow:auto;white-space:pre}#grammar{width:100%;display:block;min-height:208px;resize:vertical;border:1px solid var(--line);border-top:0;border-radius:0 0 10px 10px;padding:12px 14px;font:13px/1.7 var(--mono);color:var(--ink);background:white;tab-size:2}.table-scroll{overflow:auto;resize:vertical;height:265px;min-height:100px;border:1px solid var(--line);border-radius:10px;background:white}table{border-collapse:separate;border-spacing:0;width:100%;font:13px/1.5 var(--mono);text-align:center}th,td{padding:5px 9px;border-right:1px solid #efede7;border-bottom:1px solid #efede7;white-space:nowrap}th{background:#f5f3ee;color:var(--muted);font-size:11px;font-weight:600;position:sticky;top:0;z-index:1}th:last-child,td:last-child{border-right:0}tr:last-child td{border-bottom:0}td:first-child{font-weight:bold;background:#fdfcf9}.ghost{color:#bcb7b0}.conflict{color:var(--red);background:#fcf0ed}.conflict-note{font-size:11px;color:var(--red)}.bottom{display:flex;align-items:center;gap:10px;margin-top:24px}#url{min-width:0;flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:white;font:12px var(--mono);color:var(--ink)}#notice{min-height:22px;margin:10px 0;color:var(--red);font-size:12px;white-space:pre-wrap}footer{display:flex;justify-content:space-between;gap:15px;border-top:1px solid var(--line);padding-top:14px;margin-top:10px;color:var(--muted);font-size:11px}.legend{font-size:11px;color:var(--muted)}.legend b{font-weight:600}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:800px){main{padding:24px 14px}.board{grid-template-columns:220px minmax(0,1fr)}.lower{grid-template-columns:1fr}.badge{display:none}#graph,#step-list{height:390px}footer{flex-wrap:wrap}}@media(max-width:520px){.board{grid-template-columns:1fr}.steps-panel{border-right:0;border-bottom:1px solid var(--line)}#step-list{height:180px}#graph{height:350px}.bottom{flex-wrap:wrap}#url{flex-basis:100%}.legend{display:none}}
+
+.header-actions{display:flex;align-items:center;gap:12px}.tooltip{position:fixed;z-index:20;max-width:min(420px,calc(100vw - 24px));padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#fffdf9;color:var(--ink);font:12px/1.5 system-ui,sans-serif;box-shadow:0 4px 18px #292b321a;pointer-events:none;white-space:pre-line}.tooltip[hidden]{display:none}#grammar-heading.invalid{color:var(--red)}.state-conflict{color:var(--red)}.table-scroll:focus-visible{outline:2px solid var(--red);outline-offset:2px}
 </style>
 <script src="vendor/cytoscape.min.js"></script>
 </head>
 <body>
 <main>
-<header><h1>LR<span>-gen</span></h1><div class="badge">Build an LR(0) automaton.</div></header>
+<header><h1 data-tooltip="Build an LR(0) automaton.">LR<span>-gen</span></h1><div class="header-actions"><button id="tooltips" type="button" aria-pressed="true">TOOLTIPS ON</button></div></header>
 <section class="board" aria-label="LR automaton construction">
-  <section class="steps-panel"><div class="panel-head"><span class="heading" id="steps-heading">STEPS</span><span class="count" id="step-count"></span></div><div id="step-list" aria-labelledby="steps-heading"></div></section>
-  <section class="graph-panel"><div class="panel-head"><span class="heading">LR(0)-AUTOMATON</span><div class="graph-actions"><span id="graph-count" class="count"></span><button id="motion" aria-pressed="true" title="Toggle animated layout">MOTION ON</button><button id="fit" title="Fit the automaton in the view">FIT</button></div></div><div id="graph" role="img" aria-label="LR(0) states and labelled transitions"></div></section>
-  <div id="explanation" class="explanation suggested" role="status" aria-live="polite"></div>
+  <section class="steps-panel"><div class="panel-head"><span class="heading" id="steps-heading">STEPS</span></div><div id="step-list" aria-labelledby="steps-heading"></div></section>
+  <section class="graph-panel"><div class="panel-head"><span class="heading" data-tooltip="Drag nodes to arrange them. Pan or zoom to explore; FIT shows the whole automaton.">LR(0)-AUTOMATON</span><div class="graph-actions"><button id="fit" data-tooltip="Fit the automaton in the view">FIT</button></div></div><div id="graph" role="img" aria-label="LR(0) states and labelled transitions"></div></section>
 </section>
-<div class="key-help" id="step-help"><span><kbd>Enter</kbd> / <kbd>↓</kbd> confirm</span><span><kbd>↑</kbd> undo</span><span><kbd>←</kbd> <kbd>→</kbd> cycle choices</span><span>Type to filter · click a step to revisit</span></div>
+<span id="step-help" class="sr-only">Enter or ↓ confirms. ↑ undoes. ← and → cycle choices. Type to filter; click a step to revisit.</span>
 <section class="lower">
-  <div class="grammar-panel"><div class="section-title"><label for="grammar">LBNF GRAMMAR</label><span class="count">&nbsp;</span></div><div id="accept-rule" aria-label="Automatically added start production"></div><textarea id="grammar" spellcheck="false" aria-describedby="grammar-hint"></textarea><span id="grammar-hint" class="sr-only">Use labelled LBNF productions. Returning focus to Steps applies a changed grammar and resets the construction.</span></div>
-  <div class="table-panel"><div class="section-title"><h2>PARSE TABLE</h2><span id="conflict-count" class="conflict-note"></span></div><div class="table-scroll"><table id="parse-table" aria-label="LR(0) parse table"></table>
+  <div class="grammar-panel"><div class="section-title"><label for="grammar" id="grammar-heading" data-tooltip="Edit the grammar, then return to Steps to restart the construction.">LBNF GRAMMAR</label><span class="count">&nbsp;</span></div><div id="accept-rule" data-tooltip="Entrypoint for the parser" aria-label="Automatically added start production"></div><textarea id="grammar" spellcheck="false" aria-describedby="grammar-hint"></textarea><span id="grammar-hint" class="sr-only">Use labelled LBNF productions. Returning focus to Steps applies a changed grammar and resets the construction.</span></div>
+  <div class="table-panel"><div class="section-title"><h2>PARSE TABLE</h2><span id="conflict-count" class="conflict-note"></span></div><div class="table-scroll" tabindex="0" aria-label="Resizable parse table"><table id="parse-table" aria-label="LR(0) parse table"></table></div></div>
 </section>
 <div class="bottom"><button id="clear">CLEAR</button><button id="save">SAVE ↗</button><input id="url" aria-label="Saved game URL" readonly placeholder="Save a link to the confirmed steps" spellcheck="false"></div>
 <p id="notice" role="status" aria-live="polite"></p>
 <footer><span><a href="shift-red.html">shift-red</a> · LR parser visualizations</span><span>Graph: <a href="https://js.cytoscape.org/">Cytoscape.js</a> · runs offline</span><span>Design 2026 by Andreas Abel · BSD 3-clause license</span></footer>
 </main>
+<div id="tooltip" class="tooltip" role="tooltip" hidden></div>
 <script>
 'use strict';
 const LR0 = (() => {
@@ -175,9 +177,10 @@ function replay(grammar,steps) {
 function completedItems(model,state) { return state.items.filter(i => !nextSymbol(model,i)); }
 function conflict(model,state) {
   const reductions = completedItems(model,state);
-  if (reductions.length > 1) return 'Reduce/reduce conflict';
-  if (reductions.length && state.items.some(i => nextSymbol(model,i)?.kind === 't')) return 'Shift/reduce conflict';
-  return '';
+  const conflicts = [];
+  if (reductions.length > 1) conflicts.push('Reduce/reduce conflict');
+  if (reductions.length && state.items.some(i => nextSymbol(model,i)?.kind === 't')) conflicts.push('Shift/reduce conflict');
+  return conflicts.join('; ');
 }
 function description(model,a) {
   if (!a) return 'The LR(0) automaton and parse table are complete.';
@@ -191,13 +194,49 @@ function itemText(grammar,item) {
   const r = grammar.rules[item.r], pieces = r.rhs.map(symbolText); pieces.splice(item.d,0,'•');
   return `${r.lhs} → ${pieces.join(' ')}`;
 }
-return {DEFAULT_GRAMMAR,parseGrammar,initial,available,actionText,apply,replay,conflict,completedItems,description,itemText,symbolText,kernelKey};
+// Place only the new rectangle. Existing rectangles (including dragged ones)
+// are immutable obstacles; siblings flow to the right below their source.
+function placeNode(width,height,parent,occupied) {
+  let x = parent ? parent.x-parent.width/2+width/2 : width/2;
+  const y = parent ? parent.y+parent.height/2+70+height/2 : height/2;
+  for (;;) {
+    const overlap = occupied.find(rect => Math.abs(x-rect.x) < (width+rect.width)/2+48 && Math.abs(y-rect.y) < (height+rect.height)/2+48);
+    if (!overlap) return {x,y};
+    x = overlap.x+overlap.width/2+70+width/2;
+  }
+}
+return {DEFAULT_GRAMMAR,parseGrammar,initial,available,actionText,apply,replay,conflict,completedItems,description,itemText,symbolText,kernelKey,placeNode};
 })();
 // UI: history is retained past cursor, but only the confirmed prefix is saved.
 const $ = id => document.getElementById(id);
 const make = (tag,cls,text) => { const el = document.createElement(tag); if (cls) el.className = cls; if (text !== undefined) el.textContent = text; return el; };
 let grammar = null, appliedSource = null, history = [], cursor = 0, prefix = '', choice = 0, choices = [], selected = null, current = null, full = null;
-let cy = null, runningLayout = null, motion = !window.matchMedia('(prefers-reduced-motion: reduce)').matches, lastGraphSignature = '';
+const params = new URLSearchParams(location.search);
+let cy = null, tooltips = !['0','false','off'].includes((params.get('tooltips') ?? 'on').toLowerCase());
+let tooltipHost = null;
+function hideTooltip() { $('tooltip').hidden = true; tooltipHost = null; }
+function updateTooltipButton() {
+  $('tooltips').textContent = tooltips ? 'TOOLTIPS ON' : 'TOOLTIPS OFF';
+  $('tooltips').setAttribute('aria-pressed',String(tooltips));
+}
+function showTooltip(host) {
+  if (!tooltips || !host?.dataset.tooltip) return;
+  const tip = $('tooltip'); tooltipHost = host;
+  tip.textContent = host.dataset.tooltip; tip.hidden = false;
+  const rect = host.getBoundingClientRect();
+  const x = Math.max(12,Math.min(rect.left,window.innerWidth-tip.offsetWidth-12));
+  const y = rect.bottom+8+tip.offsetHeight < window.innerHeight ? rect.bottom+8 : Math.max(12,rect.top-tip.offsetHeight-8);
+  tip.style.left = `${x}px`; tip.style.top = `${y}px`;
+}
+$('steps-heading').dataset.tooltip = $('step-help').textContent;
+document.addEventListener('pointerover',event => {
+  const host = event.target.closest?.('[data-tooltip]');
+  if (host !== tooltipHost) { hideTooltip(); showTooltip(host); }
+});
+document.addEventListener('pointerout',event => { if (tooltipHost && !tooltipHost.contains(event.relatedTarget)) hideTooltip(); });
+document.addEventListener('scroll',hideTooltip,true);
+document.addEventListener('keydown',event => { if (event.key === 'Escape') hideTooltip(); });
+window.addEventListener('resize',hideTooltip);
 const input = make('input'); input.id = 'step-input'; input.autocomplete = 'off'; input.spellcheck = false; input.setAttribute('aria-label','Next construction step'); input.setAttribute('aria-describedby','step-help');
 function readGrammar() {
   const source = $('grammar').value;
@@ -206,12 +245,12 @@ function readGrammar() {
     const parsed = LR0.parseGrammar(source);
     grammar = parsed; appliedSource = source; history = []; cursor = 0; prefix = ''; choice = 0;
     $('notice').textContent = ''; $('url').value = '';
-    $('grammar').setAttribute('aria-invalid','false');
+    $('grammar').setAttribute('aria-invalid','false'); $('grammar-heading').classList.remove('invalid');
     $('accept-rule').textContent = `${grammar.rules[0].label}. ${grammar.rules[0].lhs} ::= ${grammar.rules[0].rhs.map(LR0.symbolText).join(' ')}`;
-    if (cy) { runningLayout?.stop(); cy.elements().remove(); cy.zoom(1); cy.pan({x:$('graph').clientWidth/2,y:$('graph').clientHeight/2}); }
-    lastGraphSignature = ''; return true;
+    if (cy) { cy.elements().remove(); cy.zoom(1); cy.pan({x:28,y:28}); }
+    return true;
   } catch (error) {
-    $('notice').textContent = error.message; $('grammar').setAttribute('aria-invalid','true'); return false;
+    $('notice').textContent = error.message; $('grammar').setAttribute('aria-invalid','true'); $('grammar-heading').classList.add('invalid'); return false;
   }
 }
 function chooseDefault() {
@@ -227,6 +266,7 @@ function renderSteps(focus = false) {
   const list = $('step-list'), hadFocus = document.activeElement === input;
   const caret = input.selectionStart;
   const fragment = document.createDocumentFragment();
+  const before = LR0.initial(grammar);
   for (let i = 0; i <= history.length; i++) {
     const row = make('div','step-row' + (i === cursor ? ' current' : i > cursor ? ' future' : ''));
     row.append(make('span','marker',i === cursor ? '►' : ''));
@@ -245,12 +285,13 @@ function renderSteps(focus = false) {
       row.addEventListener('click',() => navigate(i));
       row.addEventListener('keydown',event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); navigate(i); } });
     } else { row.append(make('span','step-code','…')); row.addEventListener('click',() => navigate(i)); }
+    const action = i === cursor ? selected : LR0.available(before).find(a => LR0.actionText(a) === history[i]);
+    row.dataset.tooltip = action ? LR0.description(i === cursor ? current : before,action) : i === cursor && actions.length ? 'No available action matches this prefix.' : 'The LR(0) automaton and parse table are complete.';
+    if (i < history.length) LR0.apply(before,LR0.available(before).find(a => LR0.actionText(a) === history[i]));
     fragment.append(row);
   }
   list.replaceChildren(fragment);
-  $('step-count').textContent = `${cursor} / ${history.length}`;
-  $('explanation').textContent = actions.length && !selected ? 'No available action matches this prefix.' : LR0.description(current,selected);
-  $('explanation').className = 'explanation' + (!actions.length ? '' : !selected ? ' error' : ' suggested');
+  hideTooltip();
   if (hadFocus || focus) {
     input.focus({preventScroll:true});
     if (!input.readOnly) input.setSelectionRange(Math.min(caret ?? prefix.length,prefix.length),Math.min(caret ?? prefix.length,prefix.length));
@@ -261,28 +302,34 @@ function renderSteps(focus = false) {
   }
 }
 function renderTable() {
-  const table = $('parse-table'), head = make('thead'), top = make('tr'), bottom = make('tr');
-  for (const name of ['State','Reduce']) { const th = make('th','',name); th.rowSpan = 2; th.scope = 'col'; top.append(th); }
-  for (const [name,symbols] of [['Shift',grammar.terminals],['Goto',grammar.nonterminals]]) {
-    if (!symbols.length) continue;
-    const th = make('th','',name); th.colSpan = symbols.length; th.scope = 'colgroup'; top.append(th);
-    for (const s of symbols) { const th = make('th','',LR0.symbolText(s)); th.scope = 'col'; bottom.append(th); }
+  const table = $('parse-table'), head = make('thead'), top = make('tr');
+  for (const name of ['State','Reduce']) {
+    const th = make('th','',name); th.scope = 'col';
+    if (name === 'Reduce') th.dataset.tooltip = 'Parser reduces with given rule';
+    top.append(th);
   }
-  head.append(top,bottom); const body = make('tbody'); let conflicts = 0;
+  for (const symbol of [...grammar.terminals,...grammar.nonterminals]) {
+    const th = make('th','',LR0.symbolText(symbol)); th.scope = 'col';
+    th.dataset.tooltip = symbol.kind === 't' ? `Parser shifts token ${LR0.symbolText(symbol)} and enters given state` : `Parser completed ${LR0.symbolText(symbol)} and enters given state`;
+    top.append(th);
+  }
+  head.append(top); const body = make('tbody'); let conflicts = 0;
   for (const state of full.states) {
     const row = make('tr'), active = current.states[state.id];
-    row.append(make('td',state.born > cursor ? 'ghost' : '',String(state.id)));
+    const stateCell = make('td',state.born > cursor ? 'ghost' : '',String(state.id));
     const cell = make('td');
     let first = true;
     for (const [r,born] of state.reductions) {
       if (!first) cell.append(document.createTextNode(', ')); first = false;
-      cell.append(make('span',born > cursor ? 'ghost' : '',grammar.rules[r].label));
+      const reduction = make('span',born > cursor ? 'ghost' : '',grammar.rules[r].label);
+      reduction.dataset.tooltip = r === 0 ? 'Parsing finished successfully' : 'Parser reduces with given rule';
+      cell.append(reduction);
     }
     const problem = active && LR0.conflict(current,active);
-    if (problem) { conflicts++; cell.className = 'conflict'; cell.title = problem; }
-    row.append(cell);
-    for (const s of [...grammar.terminals,...grammar.nonterminals]) {
-      const transition = state.transitions.get(s.key);
+    if (problem) { conflicts++; stateCell.classList.add('state-conflict'); stateCell.dataset.tooltip = problem; cell.className = 'conflict'; cell.dataset.tooltip = problem; }
+    row.append(stateCell,cell);
+    for (const symbol of [...grammar.terminals,...grammar.nonterminals]) {
+      const transition = state.transitions.get(symbol.key);
       row.append(make('td',transition && transition.born > cursor ? 'ghost' : '',transition ? String(transition.to) : ''));
     }
     body.append(row);
@@ -290,15 +337,16 @@ function renderTable() {
   table.replaceChildren(head,body);
   $('conflict-count').textContent = conflicts ? `${conflicts} conflicting state${conflicts === 1 ? '' : 's'}` : '';
 }
+
 function initGraph() {
   if (typeof cytoscape !== 'function') { $('graph').textContent = 'Graph library missing. Keep vendor/cytoscape.min.js beside this page.'; return; }
-  cy = cytoscape({container:$('graph'),elements:[],layout:{name:'preset'},minZoom:.15,maxZoom:2.5,wheelSensitivity:.2,style:[
+  cy = cytoscape({container:$('graph'),elements:[],layout:{name:'preset',fit:false},zoom:1,pan:{x:28,y:28},minZoom:.15,maxZoom:2.5,wheelSensitivity:.2,style:[
     {selector:'node',style:{shape:'round-rectangle','background-color':'#ffffff','border-color':'#9a968e','border-width':1.3,width:'data(width)',height:'data(height)',label:'','overlay-opacity':0}},
     {selector:'node.finished',style:{'border-width':3.5,'border-color':'#555951'}},
     {selector:'node.conflicted',style:{'border-color':'#b93838'}},
     {selector:'node.future-border',style:{'border-opacity':.25}},
     {selector:'node.future',style:{'background-opacity':.5,'border-opacity':.25}},
-    {selector:'edge',style:{width:1.4,'line-color':'#99948a','target-arrow-color':'#99948a','target-arrow-shape':'triangle','curve-style':'bezier',label:'data(label)','font-family':'monospace','font-size':12,color:'#55534d','text-background-color':'#faf8f4','text-background-opacity':1,'text-background-padding':'4px','text-rotation':'none','arrow-scale':.8}},
+    {selector:'edge',style:{width:1.4,'line-color':'#99948a','target-arrow-color':'#99948a','target-arrow-shape':'triangle','curve-style':'unbundled-bezier','control-point-distances':'data(bend)','control-point-weights':.5,label:'data(label)','font-family':'monospace','font-size':12,color:'#55534d','text-background-color':'#faf8f4','text-background-opacity':1,'text-background-padding':'4px','text-rotation':'none','arrow-scale':.8}},
     {selector:'edge.future',style:{opacity:.22}},
     {selector:':selected',style:{'border-color':'#b93838','line-color':'#b93838','target-arrow-color':'#b93838'}}
   ]});
@@ -329,17 +377,20 @@ function renderGraph() {
   if (!cy) return;
   const needed = new Set();
   cy.batch(() => {
+    cy.nodes().filter(n => full.states[n.data('state')]?.key !== n.data('kernel')).remove();
     for (const state of full.states) {
       const id = `s${state.id}`; needed.add(id);
-      const lines = state.items.map(i => LR0.itemText(grammar,i));
+      // Reserve closure space at birth, so expanding items never moves borders or edges.
+      const lines = state.full.map(i => LR0.itemText(grammar,i));
       const width = Math.max(155,...lines.map(line => line.length*7.25+30)), height = 60+lines.length*21;
       let node = cy.getElementById(id);
       if (!node.length) {
-        let position = {x:0,y:0};
         const incoming = full.states.flatMap(s => [...s.transitions.values()].map(t => ({...t,from:s.id}))).find(t => t.to === state.id);
-        if (incoming) { const parent = cy.getElementById(`s${incoming.from}`); if (parent.length) position = {x:parent.position('x')+240,y:parent.position('y')+(state.id%2 ? -70 : 95)}; }
-        node = cy.add({data:{id,state:state.id,width,height},position});
-      } else node.data({width,height});
+        const parent = incoming ? cy.getElementById(`s${incoming.from}`) : null;
+        const position = LR0.placeNode(width,height,parent?.length ? {x:parent.position('x'),y:parent.position('y'),width:parent.data('width'),height:parent.data('height')} : null,cy.nodes().map(n => ({x:n.position('x'),y:n.position('y'),width:n.data('width'),height:n.data('height')})));
+        node = cy.add({data:{id,state:state.id,kernel:state.key,width,height},position});
+      }
+
       const active = current.states[state.id], completed = active && LR0.completedItems(current,active);
       const finished = completed?.length > 0 && completed.every(i => active.reductions.has(i.r));
       const fullCompleted = LR0.completedItems(full,state);
@@ -352,30 +403,27 @@ function renderGraph() {
       const id = `s${state.id}`;
       for (const transition of state.transitions.values()) {
         const edgeId = `e${state.id}-${transition.symbol.key}`; needed.add(edgeId);
-        if (!cy.getElementById(edgeId).length) cy.add({data:{id:edgeId,source:id,target:`s${transition.to}`,label:LR0.symbolText(transition.symbol)}});
+        const existing = cy.getElementById(edgeId);
+        if (existing.length && existing.data('target') !== `s${transition.to}`) existing.remove();
+        if (!cy.getElementById(edgeId).length) {
+          const target = `s${transition.to}`;
+          const siblings = cy.edges().filter(e => (e.data('source') === id && e.data('target') === target) || (e.data('source') === target && e.data('target') === id)).length;
+          const bend = id === target ? 90+siblings*35 : siblings ? 38*Math.ceil(siblings/2)*(siblings%2 ? 1 : -1) : 0;
+          cy.add({data:{id:edgeId,source:id,target,bend,label:LR0.symbolText(transition.symbol)}});
+        }
         cy.getElementById(edgeId).classes(transition.born > cursor ? 'future' : '');
       }
     }
     cy.elements().filter(el => !needed.has(el.id())).remove();
   });
-  const signature = full.states.map(s => `${s.id}:${s.items.length}:${s.transitions.size}`).join('|');
-  if (signature !== lastGraphSignature) {
-    lastGraphSignature = signature; runningLayout?.stop();
-    if (full.states.length === 1) { cy.getElementById('s0').position({x:0,y:0}); cy.center(); }
-    else {
-      runningLayout = cy.layout({name:'cose',randomize:false,animate:motion ? 'end' : false,animationDuration:650,animationEasing:'ease-in-out',fit:true,padding:35,nodeRepulsion:12000,idealEdgeLength:110,edgeElasticity:100,gravity:.2,numIter:700,initialTemp:35,coolingFactor:.94,minTemp:1,nodeDimensionsIncludeLabels:true});
-      runningLayout.run();
-    }
-  }
   cy.resize(); cy.forceRender();
-  $('graph-count').textContent = `${current.states.length} state${current.states.length === 1 ? '' : 's'}`;
   $('graph').setAttribute('aria-label',`LR(0) automaton: ${current.states.length} states. The parse table below lists every confirmed transition and reduction.`);
 }
 function render(focus = false) {
   if (!grammar) { $('step-list').replaceChildren(input); input.value = ''; input.readOnly = true; return; }
   current = LR0.replay(grammar,history.slice(0,cursor)); full = LR0.replay(grammar,history);
   renderSteps(focus); renderTable(); renderGraph();
-  $('motion').textContent = motion ? 'MOTION ON' : 'MOTION OFF'; $('motion').setAttribute('aria-pressed',String(motion));
+
 }
 function navigate(index) {
   if (!readGrammar()) return;
@@ -401,29 +449,37 @@ input.addEventListener('keydown',event => {
 input.addEventListener('focus',() => {
   if ($('grammar').value !== appliedSource) {
     if (readGrammar()) render();
-    else { input.readOnly = true; $('explanation').textContent = 'Fix the grammar below before continuing.'; }
+    else input.readOnly = true;
   }
 });
 $('step-list').addEventListener('click',event => { if (event.target === $('step-list')) { if (readGrammar()) render(true); } });
-$('grammar').addEventListener('input',() => { $('url').value = ''; });
-$('fit').addEventListener('click',() => cy?.animate({fit:{eles:cy.elements(),padding:35},duration:350}));
-$('motion').addEventListener('click',() => { motion = !motion; if (!motion) runningLayout?.stop(); render(); });
+$('grammar').addEventListener('input',() => {
+  $('url').value = '';
+  try {
+    LR0.parseGrammar($('grammar').value);
+    $('grammar-heading').classList.remove('invalid'); $('grammar').setAttribute('aria-invalid','false');
+  } catch {
+    $('grammar-heading').classList.add('invalid'); $('grammar').setAttribute('aria-invalid','true');
+  }
+});
+$('fit').addEventListener('click',() => cy?.fit(cy.elements(),28));
+$('tooltips').addEventListener('click',() => { tooltips = !tooltips; hideTooltip(); updateTooltipButton(); $('url').value = ''; });
 $('save').addEventListener('click',() => {
   if (!readGrammar()) return;
   render();
   const url = new URL(location.href); url.search = ''; url.hash = '';
-  url.searchParams.set('grammar',appliedSource); url.searchParams.set('steps',JSON.stringify(history.slice(0,cursor)));
+  url.searchParams.set('grammar',appliedSource); url.searchParams.set('steps',JSON.stringify(history.slice(0,cursor))); url.searchParams.set('tooltips',tooltips ? 'on' : 'off');
   $('url').value = url.href; $('url').focus(); $('url').select(); $('notice').textContent = 'Link selected.';
 });
 $('url').addEventListener('click',() => $('url').select());
 $('clear').addEventListener('click',() => {
   grammar = null; appliedSource = null; history = []; cursor = 0; prefix = ''; current = full = null;
-  runningLayout?.stop(); cy?.elements().remove(); $('parse-table').replaceChildren(); $('accept-rule').textContent = ''; $('grammar').value = ''; $('url').value = ''; $('notice').textContent = '';
-  $('step-list').replaceChildren(); $('step-count').textContent = ''; $('graph-count').textContent = ''; $('conflict-count').textContent = ''; $('explanation').textContent = 'Enter a grammar below, then return to Steps.';
+  cy?.elements().remove(); hideTooltip(); $('parse-table').replaceChildren(); $('accept-rule').textContent = ''; $('grammar').value = ''; $('url').value = ''; $('notice').textContent = '';
+  $('step-list').replaceChildren(); $('conflict-count').textContent = ''; $('grammar-heading').classList.remove('invalid'); $('grammar').setAttribute('aria-invalid','false');
   // Keep a focus target so returning from a new grammar initializes the next game.
   input.value = ''; input.readOnly = true; $('step-list').append(input); $('grammar').focus();
 });
-const params = new URLSearchParams(location.search);
+updateTooltipButton();
 $('grammar').value = params.get('grammar') ?? params.get('lbnf') ?? LR0.DEFAULT_GRAMMAR;
 initGraph();
 if (readGrammar()) {

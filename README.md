@@ -20,8 +20,16 @@ productions, empty productions, comments, list categories, and the built-in
 custom token declarations must be expanded into labelled productions first.
 
 The graph uses the locally vendored [Cytoscape.js](https://js.cytoscape.org/)
-3.33.1 (MIT; see [its license](vendor/cytoscape.LICENSE)). CoSE animates from
-existing positions; undo alone does not rerun the layout. Drag nodes, pan/zoom,
-use FIT to see the whole graph, or turn motion off.
+3.33.1 (MIT; see [its license](vendor/cytoscape.LICENSE)). New nodes are placed
+below their source, with siblings flowing to the right. Existing node positions,
+manual adjustments, and edge routes are preserved; there is no automatic layout
+or viewport movement. Nodes reserve space for their full closure at creation,
+so later expansions do not move their borders. Drag nodes or pan/zoom to explore;
+FIT changes the view only when requested.
+
+Help and action explanations appear on hover. The TOOLTIPS button switches all
+tooltips on or off; the URL parameter `tooltips=off` disables them on load
+(default: on). SAVE includes that setting. The parse table can be resized
+vertically using its lower-right corner.
 
 Run the LR construction checks with `node --test tests/lr-gen.test.cjs`.
