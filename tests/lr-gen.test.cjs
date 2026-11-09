@@ -189,8 +189,10 @@ test('compact table has hover explanations and grammar errors mark the heading',
   assert.equal(page.get('step-list').children[0].dataset.tooltip,'Add parse items for non-terminal E to state 0');
   page.get('grammar').value='bad grammar';page.get('grammar').listeners.input();
   assert.ok(page.get('grammar-heading').classList.contains('invalid'));
+  assert.equal(page.get('grammar-heading').textContent,'ERROR IN LBNF GRAMMAR');
   page.get('grammar').value='n. E ::= Integer;';page.get('grammar').listeners.input();
   assert.ok(!page.get('grammar-heading').classList.contains('invalid'));
+  assert.equal(page.get('grammar-heading').textContent,'LBNF GRAMMAR');
   page.run('readGrammar();render();confirm();confirm();confirm();confirm();');
   const rows=page.get('parse-table').children[1].children;
   const accept=rows.flatMap(row=>row.children[1].children).find(span=>span.textContent==='accept');

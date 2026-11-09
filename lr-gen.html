@@ -16,7 +16,7 @@
 </head>
 <body>
 <main>
-<header><h1 data-tooltip="Build an LR(0) automaton.">LR<span>-gen</span></h1><div class="header-actions"><button id="tooltips" type="button" aria-pressed="true">TOOLTIPS ON</button></div></header>
+<header><h1 data-tooltip="Build an LR(0) automaton.">LR<span>-gen</span></h1><div class="header-actions"><div class="badge">Build an LR(0) automaton.</div><button id="tooltips" type="button" aria-pressed="true">TOOLTIPS ON</button></div></header>
 <section class="board" aria-label="LR automaton construction">
   <section class="steps-panel"><div class="panel-head"><span class="heading" id="steps-heading">STEPS</span></div><div id="step-list" aria-labelledby="steps-heading"></div></section>
   <section class="graph-panel"><div class="panel-head"><span class="heading" data-tooltip="Drag nodes to arrange them. Pan or zoom to explore; FIT shows the whole automaton.">LR(0)-AUTOMATON</span><div class="graph-actions"><button id="fit" data-tooltip="Fit the automaton in the view">FIT</button></div></div><div id="graph" role="img" aria-label="LR(0) states and labelled transitions"></div></section>
@@ -238,6 +238,12 @@ document.addEventListener('scroll',hideTooltip,true);
 document.addEventListener('keydown',event => { if (event.key === 'Escape') hideTooltip(); });
 window.addEventListener('resize',hideTooltip);
 const input = make('input'); input.id = 'step-input'; input.autocomplete = 'off'; input.spellcheck = false; input.setAttribute('aria-label','Next construction step'); input.setAttribute('aria-describedby','step-help');
+function setGrammarError(invalid) {
+  $('grammar').setAttribute('aria-invalid',String(invalid));
+  $('grammar-heading').textContent = invalid ? 'ERROR IN LBNF GRAMMAR' : 'LBNF GRAMMAR';
+  if (invalid) $('grammar-heading').classList.add('invalid');
+  else $('grammar-heading').classList.remove('invalid');
+}
 function readGrammar() {
   const source = $('grammar').value;
   if (source === appliedSource) return !!grammar;
@@ -245,12 +251,12 @@ function readGrammar() {
     const parsed = LR0.parseGrammar(source);
     grammar = parsed; appliedSource = source; history = []; cursor = 0; prefix = ''; choice = 0;
     $('notice').textContent = ''; $('url').value = '';
-    $('grammar').setAttribute('aria-invalid','false'); $('grammar-heading').classList.remove('invalid');
+    setGrammarError(false);
     $('accept-rule').textContent = `${grammar.rules[0].label}. ${grammar.rules[0].lhs} ::= ${grammar.rules[0].rhs.map(LR0.symbolText).join(' ')}`;
     if (cy) { cy.elements().remove(); cy.zoom(1); cy.pan({x:28,y:28}); }
     return true;
   } catch (error) {
-    $('notice').textContent = error.message; $('grammar').setAttribute('aria-invalid','true'); $('grammar-heading').classList.add('invalid'); return false;
+    $('notice').textContent = error.message; setGrammarError(true); return false;
   }
 }
 function chooseDefault() {
@@ -459,9 +465,9 @@ $('grammar').addEventListener('input',() => {
   $('url').value = '';
   try {
     LR0.parseGrammar($('grammar').value);
-    $('grammar-heading').classList.remove('invalid'); $('grammar').setAttribute('aria-invalid','false');
+    setGrammarError(false);
   } catch {
-    $('grammar-heading').classList.add('invalid'); $('grammar').setAttribute('aria-invalid','true');
+    setGrammarError(true);
   }
 });
 $('fit').addEventListener('click',() => cy?.fit(cy.elements(),28));
@@ -477,7 +483,7 @@ $('url').addEventListener('click',() => $('url').select());
 $('clear').addEventListener('click',() => {
   grammar = null; appliedSource = null; history = []; cursor = 0; prefix = ''; current = full = null;
   cy?.elements().remove(); hideTooltip(); $('parse-table').replaceChildren(); $('accept-rule').textContent = ''; $('grammar').value = ''; $('url').value = ''; $('notice').textContent = '';
-  $('step-list').replaceChildren(); $('conflict-count').textContent = ''; $('grammar-heading').classList.remove('invalid'); $('grammar').setAttribute('aria-invalid','false');
+  $('step-list').replaceChildren(); $('conflict-count').textContent = ''; setGrammarError(false);
   // Keep a focus target so returning from a new grammar initializes the next game.
   input.value = ''; input.readOnly = true; $('step-list').append(input); $('grammar').focus();
 });
