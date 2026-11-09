@@ -13,13 +13,16 @@
 .header-actions{display:flex;align-items:center;gap:12px}.tooltip{position:fixed;z-index:20;max-width:min(420px,calc(100vw - 24px));padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#fffdf9;color:var(--ink);font:12px/1.5 system-ui,sans-serif;box-shadow:0 4px 18px #292b321a;pointer-events:none;white-space:pre-line}.tooltip[hidden]{display:none}#grammar-heading.invalid{color:var(--red)}.state-conflict{color:var(--red)}.table-scroll:focus-visible{outline:2px solid var(--red);outline-offset:2px}
 </style>
 <script src="vendor/cytoscape.min.js"></script>
+<script src="vendor/elk.bundled.js"></script>
+<script src="lr-core.js"></script>
+<script src="lr-layout.js"></script>
 </head>
 <body>
 <main>
 <header><h1 data-tooltip="Build an LR(0) automaton.">LR<span>-gen</span></h1><div class="header-actions"><div class="badge">Build an LR(0) automaton.</div><button id="tooltips" type="button" aria-pressed="true">TOOLTIPS ON</button></div></header>
 <section class="board" aria-label="LR automaton construction">
   <section class="steps-panel"><div class="panel-head"><span class="heading" id="steps-heading">STEPS</span></div><div id="step-list" aria-labelledby="steps-heading"></div></section>
-  <section class="graph-panel"><div class="panel-head"><span class="heading" data-tooltip="Drag nodes to arrange them. Pan or zoom to explore; FIT shows the whole automaton.">LR(0)-AUTOMATON</span><div class="graph-actions"><button id="fit" data-tooltip="Fit the automaton in the view">FIT</button></div></div><div id="graph" role="img" aria-label="LR(0) states and labelled transitions"></div></section>
+  <section class="graph-panel"><div class="panel-head"><span class="heading" data-tooltip="Drag nodes to arrange them. Pan or zoom to explore; FIT shows the whole automaton.">LR(0)-AUTOMATON</span><div class="graph-actions"><span id="layout-status" class="count" role="status" aria-live="polite"></span><button id="fit" data-tooltip="Fit the automaton in the view">FIT</button></div></div><div id="graph" role="img" aria-label="LR(0) states and labelled transitions"></div></section>
 </section>
 <span id="step-help" class="sr-only">Enter or ↓ confirms. ↑ undoes. ← and → cycle choices. Type to filter; click a step to revisit.</span>
 <section class="lower">
@@ -33,180 +36,6 @@
 <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
 <script>
 'use strict';
-const LR0 = (() => {
-const DEFAULT_GRAMMAR = `EP. E ::= E "+" T;
-ET. E ::= T;
-TI. T ::= Integer;`;
-function readProductions(source) {
-  const tokens = [];
-  let i = 0;
-  const fail = message => { throw new Error(`Grammar: ${message} (near character ${i + 1}).`); };
-  while (i < source.length) {
-    if (/\s/.test(source[i])) { i++; continue; }
-    if (source.startsWith('--', i) || source.startsWith('//', i)) { while (i < source.length && source[i] !== '\n') i++; continue; }
-    if (source.startsWith('/*', i) || source.startsWith('{-', i)) {
-      const close = source.startsWith('/*', i) ? '*/' : '-}';
-      const end = source.indexOf(close, i + 2);
-      if (end < 0) fail('unclosed comment');
-      i = end + 2; continue;
-    }
-    if (source[i] === '"') {
-      const start = i++;
-      while (i < source.length && source[i] !== '"') { if (source[i] === '\\') i++; i++; }
-      if (i >= source.length) fail('unclosed terminal');
-      let value;
-      try { value = JSON.parse(source.slice(start, ++i)); } catch { fail('invalid quoted terminal'); }
-      if (!value) fail('empty terminals are not allowed; use an empty right-hand side');
-      tokens.push({kind:'terminal', value}); continue;
-    }
-    if (source.startsWith('::=', i)) { tokens.push({kind:'::='}); i += 3; continue; }
-    if ('.;[]'.includes(source[i])) { tokens.push({kind:source[i++]}); continue; }
-    const word = /^[\p{L}_][\p{L}\p{N}_'-]*/u.exec(source.slice(i));
-    if (!word) fail(`unexpected ${JSON.stringify(source[i])}`);
-    tokens.push({kind:'word', value:word[0]}); i += word[0].length;
-  }
-  let p = 0;
-  function take(kind) { const t = tokens[p++]; if (!t || t.kind !== kind) throw new Error(`Grammar: expected ${kind} near ${tokens[p - 1]?.value || tokens[p - 1]?.kind || 'end of grammar'}.`); return t; }
-  function category() { if (tokens[p]?.kind === '[') { p++; const name = '[' + category() + ']'; take(']'); return name; } return take('word').value; }
-  const rules = [], labels = new Set();
-  let entry = null;
-  while (p < tokens.length) {
-    if (tokens[p].value === 'entrypoints' && tokens[p + 1]?.kind !== '.') { p++; entry = category(); take(';'); continue; }
-    const label = take('word').value; take('.');
-    const lhs = category(); take('::=');
-    const rhs = [];
-    while (tokens[p] && tokens[p].kind !== ';') rhs.push(tokens[p].kind === 'terminal' ? tokens[p++] : {kind:'category', value:category()});
-    take(';');
-    if (labels.has(label)) throw new Error(`Grammar: duplicate action label “${label}”. Give each production a unique label.`);
-    labels.add(label); rules.push({label,lhs,rhs});
-  }
-  if (!rules.length) throw new Error('Grammar: enter at least one labelled production.');
-  const categories = new Set(rules.map(r => r.lhs));
-  const builtins = new Set(['Ident','Integer','Double','String','Char']);
-  for (const r of rules) for (const symbol of r.rhs) if (symbol.kind === 'category' && !categories.has(symbol.value) && !builtins.has(symbol.value)) throw new Error(`Grammar: category “${symbol.value}” has no production. Use quotes for a terminal. Custom token declarations and LBNF macros must be expanded into labelled productions.`);
-  if (entry && !categories.has(entry)) throw new Error(`Grammar: entrypoint “${entry}” has no production.`);
-  return {rules, start:entry || rules[0].lhs, categories};
-}
-function parseGrammar(source) {
-  const parsed = readProductions(source);
-  let startName = 'Start', acceptLabel = 'accept';
-  while (parsed.categories.has(startName)) startName += "'";
-  while (parsed.rules.some(r => r.label === acceptLabel)) acceptLabel += "'";
-  const symbol = (kind, value) => ({kind,value,key:JSON.stringify([kind,value])});
-  const rules = parsed.rules.map(r => ({...r,rhs:r.rhs.map(s => symbol(s.kind === 'terminal' || !parsed.categories.has(s.value) ? 't' : 'n',s.value))}));
-  rules.unshift({label:acceptLabel,lhs:startName,rhs:[symbol('n',parsed.start),symbol('t','$')]});
-  const terminals = [], nonterminals = [], seen = new Set();
-  // EOF leads Shift; other symbols retain their first appearance in the grammar.
-  terminals.push(rules[0].rhs[1]); seen.add(rules[0].rhs[1].key);
-  for (const rule of rules) {
-    const left = symbol('n',rule.lhs);
-    if (rule.lhs !== startName && !seen.has(left.key)) { nonterminals.push(left); seen.add(left.key); }
-    for (const s of rule.rhs) if (!seen.has(s.key)) { (s.kind === 't' ? terminals : nonterminals).push(s); seen.add(s.key); }
-  }
-  const byCategory = new Map();
-  rules.forEach((r,index) => { if (!byCategory.has(r.lhs)) byCategory.set(r.lhs,[]); byCategory.get(r.lhs).push(index); });
-  return {rules,terminals,nonterminals,byCategory};
-}
-const itemKey = item => `${item.r}:${item.d}`;
-const kernelKey = items => items.map(itemKey).sort().join('|');
-const nextSymbol = (model,item) => model.grammar.rules[item.r].rhs[item.d];
-function closure(grammar,kernel) {
-  const items = kernel.map(i => ({r:i.r,d:i.d})), seen = new Set(items.map(itemKey));
-  for (let i = 0; i < items.length; i++) {
-    const s = grammar.rules[items[i].r].rhs[items[i].d];
-    if (s?.kind !== 'n') continue;
-    for (const r of grammar.byCategory.get(s.value) || []) {
-      const item = {r,d:0};
-      if (!seen.has(itemKey(item))) { seen.add(itemKey(item)); items.push(item); }
-    }
-  }
-  return items;
-}
-function newState(model,kernel,born) {
-  const key = kernelKey(kernel), reused = model.states.find(s => s.key === key);
-  if (reused) return reused;
-  const state = {id:model.states.length,key,born,kernel:kernel.map(i => ({r:i.r,d:i.d})),items:kernel.map(i => ({r:i.r,d:i.d,born,closure:false})),expanded:new Map(),transitions:new Map(),reductions:new Map()};
-  state.full = closure(model.grammar,kernel); model.states.push(state); return state;
-}
-function initial(grammar) { const model = {grammar,states:[],step:0}; newState(model,[{r:0,d:0}],0); return model; }
-const symbolText = s => /\s/.test(s.value) ? JSON.stringify(s.value) : s.value;
-const actionText = a => `${a.state} ${a.type} ${a.object}`;
-function available(model) {
-  const actions = [];
-  for (const state of [...model.states].reverse()) {
-    const symbols = [], seen = new Set();
-    for (const item of state.items) {
-      const s = nextSymbol(model,item);
-      if (s && !seen.has(s.key)) { seen.add(s.key); symbols.push(s); }
-    }
-    for (const s of symbols) if (s.kind === 'n' && !state.expanded.has(s.key)) actions.push({state:state.id,type:'expand',object:symbolText(s),symbol:s});
-    for (const item of state.items) if (!nextSymbol(model,item) && !state.reductions.has(item.r)) actions.push({state:state.id,type:'reduce',object:model.grammar.rules[item.r].label,rule:item.r});
-    for (const s of symbols) {
-      if (state.transitions.has(s.key) || (s.kind === 'n' && !state.expanded.has(s.key))) continue;
-      const relevant = items => items.filter(i => nextSymbol(model,i)?.key === s.key).map(i => ({r:i.r,d:i.d+1}));
-      // Never freeze a partial kernel: a later expansion could add another item
-      // with this symbol after the dot. Only the complete goto set is reusable.
-      if (kernelKey(relevant(state.items)) !== kernelKey(relevant(state.full))) continue;
-      actions.push({state:state.id,type:s.kind === 't' ? 'shift' : 'goto',object:symbolText(s),symbol:s});
-    }
-  }
-  return actions;
-}
-function apply(model,action) {
-  const state = model.states[action.state], born = ++model.step;
-  if (action.type === 'expand') {
-    state.expanded.set(action.symbol.key,born);
-    for (const r of model.grammar.byCategory.get(action.symbol.value) || []) if (!state.items.some(i => i.r === r && i.d === 0)) state.items.push({r,d:0,born,closure:true});
-  } else if (action.type === 'reduce') state.reductions.set(action.rule,born);
-  else {
-    const kernel = state.items.filter(i => nextSymbol(model,i)?.key === action.symbol.key).map(i => ({r:i.r,d:i.d+1}));
-    const target = newState(model,kernel,born);
-    state.transitions.set(action.symbol.key,{symbol:action.symbol,to:target.id,born});
-  }
-  return model;
-}
-function replay(grammar,steps) {
-  const model = initial(grammar);
-  for (const text of steps) {
-    const action = available(model).find(a => actionText(a) === text);
-    if (!action) throw new Error(`Invalid step ${model.step + 1}: ${text}`);
-    apply(model,action);
-  }
-  return model;
-}
-function completedItems(model,state) { return state.items.filter(i => !nextSymbol(model,i)); }
-function conflict(model,state) {
-  const reductions = completedItems(model,state);
-  const conflicts = [];
-  if (reductions.length > 1) conflicts.push('Reduce/reduce conflict');
-  if (reductions.length && state.items.some(i => nextSymbol(model,i)?.kind === 't')) conflicts.push('Shift/reduce conflict');
-  return conflicts.join('; ');
-}
-function description(model,a) {
-  if (!a) return 'The LR(0) automaton and parse table are complete.';
-  if (a.type === 'expand') return `Add parse items for non-terminal ${a.object} to state ${a.state}`;
-  if (a.type === 'goto') return `State after we parsed ${a.object}`;
-  if (a.type === 'shift') return `State after we shift token ${a.object} in state ${a.state}`;
-  const r = model.grammar.rules[a.rule];
-  return `In state ${a.state} rule ${r.label} fires: reduce stack top ${r.rhs.map(symbolText).join(' ') || 'ε'} to ${r.lhs}`;
-}
-function itemText(grammar,item) {
-  const r = grammar.rules[item.r], pieces = r.rhs.map(symbolText); pieces.splice(item.d,0,'•');
-  return `${r.lhs} → ${pieces.join(' ')}`;
-}
-// Place only the new rectangle. Existing rectangles (including dragged ones)
-// are immutable obstacles; siblings flow to the right below their source.
-function placeNode(width,height,parent,occupied) {
-  let x = parent ? parent.x-parent.width/2+width/2 : width/2;
-  const y = parent ? parent.y+parent.height/2+70+height/2 : height/2;
-  for (;;) {
-    const overlap = occupied.find(rect => Math.abs(x-rect.x) < (width+rect.width)/2+48 && Math.abs(y-rect.y) < (height+rect.height)/2+48);
-    if (!overlap) return {x,y};
-    x = overlap.x+overlap.width/2+70+width/2;
-  }
-}
-return {DEFAULT_GRAMMAR,parseGrammar,initial,available,actionText,apply,replay,conflict,completedItems,description,itemText,symbolText,kernelKey,placeNode};
-})();
 // UI: history is retained past cursor, but only the confirmed prefix is saved.
 const $ = id => document.getElementById(id);
 const make = (tag,cls,text) => { const el = document.createElement(tag); if (cls) el.className = cls; if (text !== undefined) el.textContent = text; return el; };
@@ -214,6 +43,53 @@ let grammar = null, appliedSource = null, history = [], cursor = 0, prefix = '',
 const params = new URLSearchParams(location.search);
 let cy = null, tooltips = !['0','false','off'].includes((params.get('tooltips') ?? 'on').toLowerCase());
 let tooltipHost = null;
+let layoutPlan = null, layoutWorker = null, layoutGeneration = 0;
+const manualPositions = new Map();
+function cancelPlanning() { layoutGeneration++; layoutWorker?.terminate(); layoutWorker = null; }
+function fitPlan() {
+  if (!cy || !layoutPlan) return;
+  let left = 0, top = 0, right = layoutPlan.bounds.width, bottom = layoutPlan.bounds.height;
+  for (const [key,position] of manualPositions) {
+    const node = layoutPlan.nodes.get(key); if (!node) continue;
+    left = Math.min(left,position.x-node.width/2); top = Math.min(top,position.y-node.height/2);
+    right = Math.max(right,position.x+node.width/2); bottom = Math.max(bottom,position.y+node.height/2);
+  }
+  const view = LRLayout.fit({x:left,y:top,width:right-left,height:bottom-top},$('graph').clientWidth,$('graph').clientHeight);
+  cy.viewport(view);
+}
+async function startPlanning(source,modelGrammar) {
+  cancelPlanning(); const generation = layoutGeneration;
+  layoutPlan = null; manualPositions.clear();
+  if (!cy) return;
+  $('layout-status').textContent = 'Planning layout…'; $('graph').setAttribute('aria-busy','true'); $('fit').disabled = true;
+  const size = {width:$('graph').clientWidth,height:$('graph').clientHeight};
+  const cancelled = () => generation !== layoutGeneration;
+  try {
+    let plan;
+    if (location.protocol !== 'file:' && typeof Worker === 'function') {
+      try {
+        plan = await new Promise((resolve,reject) => {
+          const worker = new Worker(new URL('lr-layout-worker.js',document.baseURI)); layoutWorker = worker;
+          worker.onmessage = event => { worker.terminate(); if (layoutWorker === worker) layoutWorker = null; event.data.error ? reject(new Error(event.data.error)) : resolve(event.data.plan); };
+          worker.onerror = () => { worker.terminate(); if (layoutWorker === worker) layoutWorker = null; reject(new Error('Layout worker unavailable')); };
+          worker.postMessage({source,size});
+        });
+      } catch { if (cancelled()) return; }
+    }
+    // Local file URLs cannot start external workers in some browsers.
+    if (!plan && !cancelled()) {
+      const model = await LR0.canonical(modelGrammar,() => new Promise(resolve => setTimeout(resolve,0)));
+      plan = await LRLayout.plan(LR0,model,ELK,size,cancelled);
+    }
+    if (cancelled() || !plan) return;
+    layoutPlan = plan; $('layout-status').textContent = ''; $('fit').disabled = false; $('graph').setAttribute('aria-busy','false');
+    renderGraph(); fitPlan();
+  } catch (error) {
+    if (cancelled()) return;
+    $('layout-status').textContent = 'Layout unavailable'; $('graph').setAttribute('aria-busy','false');
+    $('notice').textContent = `Could not plan the automaton: ${error.message}`;
+  }
+}
 function hideTooltip() { $('tooltip').hidden = true; tooltipHost = null; }
 function updateTooltipButton() {
   $('tooltips').textContent = tooltips ? 'TOOLTIPS ON' : 'TOOLTIPS OFF';
@@ -253,7 +129,8 @@ function readGrammar() {
     $('notice').textContent = ''; $('url').value = '';
     setGrammarError(false);
     $('accept-rule').textContent = `${grammar.rules[0].label}. ${grammar.rules[0].lhs} ::= ${grammar.rules[0].rhs.map(LR0.symbolText).join(' ')}`;
-    if (cy) { cy.elements().remove(); cy.zoom(1); cy.pan({x:28,y:28}); }
+    if (cy) cy.elements().remove();
+    startPlanning(source,parsed);
     return true;
   } catch (error) {
     $('notice').textContent = error.message; setGrammarError(true); return false;
@@ -348,14 +225,14 @@ function renderTable() {
 
 function initGraph() {
   if (typeof cytoscape !== 'function') { $('graph').textContent = 'Graph library missing. Keep vendor/cytoscape.min.js beside this page.'; return; }
-  cy = cytoscape({container:$('graph'),elements:[],layout:{name:'preset',fit:false},zoom:1,pan:{x:28,y:28},minZoom:.15,maxZoom:2.5,wheelSensitivity:.2,style:[
+  cy = cytoscape({container:$('graph'),elements:[],layout:{name:'preset',fit:false},zoom:1,pan:{x:28,y:28},minZoom:.03,maxZoom:2.5,wheelSensitivity:.2,style:[
     {selector:'node',style:{shape:'round-rectangle','background-color':'#ffffff','border-color':'#9a968e','border-width':1.3,width:'data(width)',height:'data(height)',label:'','overlay-opacity':0}},
     {selector:'node.finished',style:{'border-width':3.5,'border-color':'#555951'}},
     {selector:'node.conflicted',style:{'border-color':'#b93838'}},
     {selector:'node.future-border',style:{'border-opacity':.25}},
     {selector:'node.future',style:{'background-opacity':.5,'border-opacity':.25}},
-    {selector:'edge',style:{width:1.4,'line-color':'#99948a','target-arrow-color':'#99948a','target-arrow-shape':'triangle','curve-style':'unbundled-bezier','control-point-distances':'data(bend)','control-point-weights':.5,label:'data(label)','font-family':'monospace','font-size':12,color:'#55534d','text-background-color':'#faf8f4','text-background-opacity':1,'text-background-padding':'4px','text-rotation':'none','arrow-scale':.8}},
-    {selector:'edge.future',style:{opacity:.22}},
+    // Exact ELK routes and labels are painted by the overlay below.
+    {selector:'edge',style:{opacity:0,'events':'no'}},
     {selector:':selected',style:{'border-color':'#b93838','line-color':'#b93838','target-arrow-color':'#b93838'}}
   ]});
   // A second canvas draws individual item lines with distinct closure/undo opacity.
@@ -365,7 +242,28 @@ function initGraph() {
     const width = $('graph').clientWidth, height = $('graph').clientHeight, ratio = window.devicePixelRatio || 1;
     if (overlay.width !== width*ratio || overlay.height !== height*ratio) { overlay.width = width*ratio; overlay.height = height*ratio; }
     context.setTransform(ratio,0,0,ratio,0,0); context.clearRect(0,0,width,height);
-    const zoom = cy.zoom();
+    const zoom = cy.zoom(), pan = cy.pan();
+    if (layoutPlan) {
+      context.save(); context.translate(pan.x,pan.y); context.scale(zoom,zoom);
+      cy.edges().forEach(edge => {
+        const route = layoutPlan.edges.get(edge.data('routeKey')); if (!route) return;
+        const geometry = LRLayout.edgeGeometry(route,layoutPlan.nodes,manualPositions);
+        const points = geometry.points;
+        context.globalAlpha = edge.hasClass('future') ? .22 : 1;
+        context.strokeStyle = '#99948a'; context.fillStyle = '#99948a'; context.lineWidth = 1.4; context.lineJoin = 'round';
+        context.beginPath(); points.forEach((point,index) => index ? context.lineTo(point.x,point.y) : context.moveTo(point.x,point.y)); context.stroke();
+        const end = points.at(-1); let previous = points.at(-2);
+        for (let i=points.length-2;i>=0 && Math.hypot(end.x-previous.x,end.y-previous.y)<.01;i--) previous=points[i];
+        const angle = Math.atan2(end.y-previous.y,end.x-previous.x), length = 7;
+        context.beginPath(); context.moveTo(end.x,end.y);
+        context.lineTo(end.x-length*Math.cos(angle-.4),end.y-length*Math.sin(angle-.4));
+        context.lineTo(end.x-length*Math.cos(angle+.4),end.y-length*Math.sin(angle+.4)); context.closePath(); context.fill();
+        const label = geometry.labelPosition;
+        context.fillStyle = '#faf8f4'; context.fillRect(label.x-route.labelWidth/2,label.y-9,route.labelWidth,18);
+        context.fillStyle = '#55534d'; context.font = '12px monospace'; context.textAlign = 'center'; context.textBaseline = 'middle'; context.fillText(route.label,label.x,label.y);
+      });
+      context.restore(); context.textAlign = 'left';
+    }
     cy.nodes().forEach(node => {
       const state = full?.states[node.data('state')]; if (!state) return;
       const pos = node.renderedPosition(), w = node.data('width')*zoom, h = node.data('height')*zoom;
@@ -379,23 +277,22 @@ function initGraph() {
     });
   }
   cy.on('render',drawLabels); new ResizeObserver(() => { cy.resize(); drawLabels(); }).observe($('graph'));
+  cy.on('drag','node',event => { const node = event.target; manualPositions.set(node.data('kernel'),{...node.position()}); cy.forceRender(); });
   cy.on('tap','node',event => { const id = event.target.data('state'), actions = LR0.available(current).filter(a => a.state === id); if (actions.length) { prefix = `${id} `; choice = 0; renderSteps(true); } });
 }
 function renderGraph() {
-  if (!cy) return;
+  if (!cy || !layoutPlan || !full) return;
   const needed = new Set();
   cy.batch(() => {
     cy.nodes().filter(n => full.states[n.data('state')]?.key !== n.data('kernel')).remove();
     for (const state of full.states) {
       const id = `s${state.id}`; needed.add(id);
-      // Reserve closure space at birth, so expanding items never moves borders or edges.
-      const lines = state.full.map(i => LR0.itemText(grammar,i));
-      const width = Math.max(155,...lines.map(line => line.length*7.25+30)), height = 60+lines.length*21;
+      const planned = layoutPlan.nodes.get(state.key);
+      if (!planned) throw new Error('State missing from the planned canonical automaton.');
+      const {width,height} = planned;
       let node = cy.getElementById(id);
       if (!node.length) {
-        const incoming = full.states.flatMap(s => [...s.transitions.values()].map(t => ({...t,from:s.id}))).find(t => t.to === state.id);
-        const parent = incoming ? cy.getElementById(`s${incoming.from}`) : null;
-        const position = LR0.placeNode(width,height,parent?.length ? {x:parent.position('x'),y:parent.position('y'),width:parent.data('width'),height:parent.data('height')} : null,cy.nodes().map(n => ({x:n.position('x'),y:n.position('y'),width:n.data('width'),height:n.data('height')})));
+        const position = manualPositions.get(state.key) || {x:planned.x,y:planned.y};
         node = cy.add({data:{id,state:state.id,kernel:state.key,width,height},position});
       }
 
@@ -415,9 +312,8 @@ function renderGraph() {
         if (existing.length && existing.data('target') !== `s${transition.to}`) existing.remove();
         if (!cy.getElementById(edgeId).length) {
           const target = `s${transition.to}`;
-          const siblings = cy.edges().filter(e => (e.data('source') === id && e.data('target') === target) || (e.data('source') === target && e.data('target') === id)).length;
-          const bend = id === target ? 90+siblings*35 : siblings ? 38*Math.ceil(siblings/2)*(siblings%2 ? 1 : -1) : 0;
-          cy.add({data:{id:edgeId,source:id,target,bend,label:LR0.symbolText(transition.symbol)}});
+          const routeKey = LRLayout.edgeKey(state.key,transition.symbol.key,full.states[transition.to].key);
+          cy.add({data:{id:edgeId,source:id,target,routeKey}});
         }
         cy.getElementById(edgeId).classes(transition.born > cursor ? 'future' : '');
       }
@@ -470,7 +366,7 @@ $('grammar').addEventListener('input',() => {
     setGrammarError(true);
   }
 });
-$('fit').addEventListener('click',() => cy?.fit(cy.elements(),28));
+$('fit').addEventListener('click',fitPlan);
 $('tooltips').addEventListener('click',() => { tooltips = !tooltips; hideTooltip(); updateTooltipButton(); $('url').value = ''; });
 $('save').addEventListener('click',() => {
   if (!readGrammar()) return;
@@ -482,6 +378,7 @@ $('save').addEventListener('click',() => {
 $('url').addEventListener('click',() => $('url').select());
 $('clear').addEventListener('click',() => {
   grammar = null; appliedSource = null; history = []; cursor = 0; prefix = ''; current = full = null;
+  cancelPlanning(); layoutPlan = null; manualPositions.clear(); $('layout-status').textContent = ''; $('graph').setAttribute('aria-busy','false'); $('fit').disabled = true;
   cy?.elements().remove(); hideTooltip(); $('parse-table').replaceChildren(); $('accept-rule').textContent = ''; $('grammar').value = ''; $('url').value = ''; $('notice').textContent = '';
   $('step-list').replaceChildren(); $('conflict-count').textContent = ''; setGrammarError(false);
   // Keep a focus target so returning from a new grammar initializes the next game.

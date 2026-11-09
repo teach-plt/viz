@@ -20,12 +20,26 @@ productions, empty productions, comments, list categories, and the built-in
 custom token declarations must be expanded into labelled productions first.
 
 The graph uses the locally vendored [Cytoscape.js](https://js.cytoscape.org/)
-3.33.1 (MIT; see [its license](vendor/cytoscape.LICENSE)). New nodes are placed
-below their source, with siblings flowing to the right. Existing node positions,
-manual adjustments, and edge routes are preserved; there is no automatic layout
-or viewport movement. Nodes reserve space for their full closure at creation,
-so later expansions do not move their borders. Drag nodes or pan/zoom to explore;
-FIT changes the view only when requested.
+3.33.1 (MIT; see [its license](vendor/cytoscape.LICENSE)) and locally vendored
+[ELK.js](https://github.com/kieler/elkjs) 0.11.0 for layout (EPL 2.0;
+see [its license and source notice](vendor/elk.NOTICE.md)). Keep the HTML,
+JavaScript files, and `vendor/` directory together when copying the tool.
+
+When a grammar is applied, the tool computes its complete canonical LR(0)
+automaton separately from the teaching steps. ELK compares compact downward,
+wrapped, and rightward layouts against the display's aspect ratio. The selected
+layout reserves space for every state's closure and every labelled edge.
+The initial view fits this complete plan; confirming steps reveals states at
+their planned positions, with the numbers assigned by the user's action order.
+Unvisited states remain hidden. Undo and branching do not rerun layout or move
+existing nodes. Manual positions are retained by item-set identity; dragging a
+node only adjusts its incident edge routes.
+
+Layout planning uses a background worker over HTTP(S). Direct local-file URLs
+also work, using the bundled in-process engine when external workers are
+unavailable. Changing the grammar cancels obsolete planning results. Resizing
+the window does not rearrange the diagram; FIT refits the plan to the new size.
+Large automata can still require pan/zoom to read comfortably.
 
 Help and action explanations appear on hover. The TOOLTIPS button switches all
 tooltips on or off; the URL parameter `tooltips=off` disables them on load
